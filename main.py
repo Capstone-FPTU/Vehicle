@@ -62,7 +62,7 @@ GPIO.output(relay, GPIO.LOW)
 GPIO.output(relayLed, GPIO.LOW)
 frequency = 1000
 speed = 100
-speedTurn = 80
+speedTurn = 100
 runLeft = GPIO.PWM(enLeft, frequency)
 runRight = GPIO.PWM(enRight, frequency)
 runLeft.start(speed)
@@ -72,7 +72,7 @@ cap = cv2.VideoCapture(0)
 # detect traffic sign
 flag_prioritize = 0
 detect = None
-sensor = DistanceSensor(echo=18, trigger=24, max_distance=5)
+sensor = DistanceSensor(echo=25, trigger=24, max_distance=5)
 
 flag_sensor_light = "C"
 flag_detect = 0
@@ -85,6 +85,10 @@ sign_3 = 0
 sign_4 = 0
 sign_5 = 0
 value_person = 0
+flag_turn_sos_p = 0
+flag_skip = 0
+sec = 0
+sec_person = 0
 # detect person
 parser = argparse.ArgumentParser(description='Use MobileNet SSD on Pi for object detection')
 parser.add_argument("--prototxt", default="MobileNetSSD_deploy.prototxt")
@@ -98,7 +102,7 @@ list_villa = {
     "SONA": "forward",
     "YUMMI": "forward",
     "NAMI": "forward",
-    "LULU": "right",
+    "LULU": "stop",
     "LUX": "right",
     "TEEMO": "stop"
 }
@@ -275,121 +279,123 @@ def call_thread_detect_person(frame):
     x = threading.Thread(target=detect_person, args=(frame,))
     x.start()
     x.join()
-flag_turn_sos_p = 0
-flag_skip = 0
-sec = 0
-sec_person = 0
-while True:
-    flag_detect = 0
-    frame = call_thread_camera()
-    key = cv2.waitKey(1)
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    cv2.imshow("New Vehicle", frame)
-    # detect distance
-    while sensor.distance * 100 < 35 and value_person == 0:
-        stop()
-        call_thread_detect_person(frame)
-        if value_person > 0:
-            print("Person")
-            value_person = 0
-        else:
-            print("Obstacle")
-            call_thread_led_sign()
-            call_thread_follow_line(sign_1, sign_2, sign_3, sign_4, sign_5)
-                
-                
-    call_thread_led_sign()
-    call_thread_follow_line(sign_1, sign_2, sign_3, sign_4, sign_5)
-    GPIO.output(relayLed, GPIO.LOW)
-    if value_detect == "STOP":
-        stop()
-        key = ord('q')
-    if flag_sensor_light == "SOS_P":
-        if value_detect == "":
-            GPIO.output(relayLed,GPIO.HIGH)
-            flag_turn_sos_p = 0
+
+def run(list_villa):
+    global value_detect, villa_name, value_person
+    while True:
+        flag_detect = 0
+        frame = call_thread_camera()
+        key = cv2.waitKey(1)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        cv2.imshow("New Vehicle", frame)
+        # detect distance
+        while sensor.distance * 100 < 35 and value_person == 0:
             stop()
-            frame = call_thread_camera()
-            call_thread_detect_villa(frame)
-            if villa_name != "":
-                villa = "".join(filter(str.isalnum, villa_name))        
-            try:
-                value_detect = list_villa[villa].upper().strip()
-                villa_name = ''
-                villa = ''
-                flag_detect = 1
-                flag_skip = 1
+            call_thread_detect_person(frame)
+            if value_person > 0:
+                print("Person")
+                value_person = 0
+            else:
+                print("Obstacle")
+                call_thread_led_sign()
+                call_thread_follow_line(sign_1, sign_2, sign_3, sign_4, sign_5)
+                    
+                    
+        call_thread_led_sign()
+        call_thread_follow_line(sign_1, sign_2, sign_3, sign_4, sign_5)
+        GPIO.output(relayLed, GPIO.LOW)
+        if value_detect == "PARKING":
+            # call function Parking
+            pass
+        if value_detect == "STOP":
+            stop()
+            key = ord('q')
+        if flag_sensor_light == "SOS_P":
+            if value_detect == "":
+                GPIO.output(relayLed,GPIO.HIGH)
+                flag_turn_sos_p = 0
+                stop()
+                frame = call_thread_camera()
+                call_thread_detect_villa(frame)
+                if villa_name != "":
+                    villa = "".join(filter(str.isalnum, villa_name))        
+                try:
+                    value_detect = list_villa[villa].upper().strip()
+                    villa_name = ''
+                    villa = ''
+                    flag_detect = 1
+                    flag_skip = 1
+                    sec = time.time()
+                    forward_with_speed(speed)
+                    call_thread_follow_line(sign_1, sign_2, sign_3, sign_4, sign_5)
+                except:
+                    value_detect = value_detect
+    #         nga tu
+            elif value_detect != "" and flag_skip == 1 and time.time() - sec > 1:
+                print('---------------------------------------')
                 sec = time.time()
+                flag_skip = 0
                 forward_with_speed(speed)
                 call_thread_follow_line(sign_1, sign_2, sign_3, sign_4, sign_5)
-            except:
-                value_detect = value_detect
-#         nga tu
-        elif value_detect != "" and flag_skip == 1 and time.time() - sec > 1:
-            print('---------------------------------------')
-            sec = time.time()
-            flag_skip = 0
+            elif value_detect != "" and flag_skip == 0 and time.time() - sec > 1:
+    #         else:
+                forward_with_speed(speed)
+                call_thread_follow_line(sign_1, sign_2, sign_3, sign_4, sign_5)
+                if flag_turn_sos_p == 1:
+                    if value_detect == "FORWARD":
+                        forward_with_speed(speed)
+                        value_detect = ''
+                        flag_turn_sos_p = 0
+                    while value_detect == "LEFT" and flag_detect == 0 and time.time() - sec > 1:
+                        frame = call_thread_camera()
+                        turn_left_max_sos()
+                        call_thread_led_sign()
+                        if sign_1 == 0 and sign_2 == 0 and sign_3 == 1 and sign_4 == 1 and sign_5 == 1:
+                            value_detect = ''
+                    while value_detect == "RIGHT" and flag_detect == 0 and time.time() - sec > 1:
+                        frame = call_thread_camera()
+                        turn_right_max_sos()
+                        call_thread_led_sign()
+                        if sign_1 == 1 and sign_2 == 1 and sign_3 == 1 and sign_4 == 0 and sign_5 == 0:            
+                            value_detect = ''
+    #     nga ba 
+        else:
+            
+            flag_turn_sos_p = 1
             forward_with_speed(speed)
-            call_thread_follow_line(sign_1, sign_2, sign_3, sign_4, sign_5)
-        elif value_detect != "" and flag_skip == 0 and time.time() - sec > 1:
-#         else:
-            forward_with_speed(speed)
-            call_thread_follow_line(sign_1, sign_2, sign_3, sign_4, sign_5)
-            if flag_turn_sos_p == 1:
-                while value_detect == "LEFT" and flag_detect == 0 and time.time() - sec > 1:
+            
+            if flag_sensor_light == "SOS_L":
+                while value_detect == "LEFT" and flag_detect == 0 and flag_skip == 0 and time.time() - sec > 0.5:
                     frame = call_thread_camera()
                     turn_left_max_sos()
                     call_thread_led_sign()
                     if sign_1 == 0 and sign_2 == 0 and sign_3 == 1 and sign_4 == 1 and sign_5 == 1:
                         value_detect = ''
-                while value_detect == "RIGHT" and flag_detect == 0 and time.time() - sec > 1:
+            elif flag_sensor_light == "SOS_R":
+                while value_detect == "RIGHT" and flag_detect == 0 and flag_skip == 0 and time.time() - sec > 0.5:
                     frame = call_thread_camera()
                     turn_right_max_sos()
                     call_thread_led_sign()
                     if sign_1 == 1 and sign_2 == 1 and sign_3 == 1 and sign_4 == 0 and sign_5 == 0:            
                         value_detect = ''
-#     nga ba 
-    else:
+            elif flag_sensor_light == "C":
+                forward_with_speed(speed)
+            elif flag_sensor_light == "R":
+                turn_right(10)
+            elif flag_sensor_light == "RM":
+                turn_right_max()
+            elif flag_sensor_light == "L":
+                turn_left(10)
+            elif flag_sensor_light == "LM":
+                turn_left_max()
+        if(key==ord('q')):
+            GPIO.output(relayLed, GPIO.LOW)
+            break
         
-        flag_turn_sos_p = 1
-        forward_with_speed(speed)
-        if value_detect == "FORWARD":
-            forward_with_speed(speed)
-            value_detect = ''
-            flag_turn_sos_p = 0
-        if flag_sensor_light == "SOS_L":
-            print("SOS_L:", time.time() - sec)
-            while value_detect == "LEFT" and flag_detect == 0 and flag_skip == 0 and time.time() - sec > 0.5:
-                frame = call_thread_camera()
-                turn_left_max_sos()
-                call_thread_led_sign()
-                if sign_1 == 0 and sign_2 == 0 and sign_3 == 1 and sign_4 == 1 and sign_5 == 1:
-                    value_detect = ''
-        elif flag_sensor_light == "SOS_R":
-            print("SOS_R:", time.time() - sec)
-            while value_detect == "RIGHT" and flag_detect == 0 and flag_skip == 0 and time.time() - sec > 0.5:
-                frame = call_thread_camera()
-                turn_right_max_sos()
-                call_thread_led_sign()
-                if sign_1 == 1 and sign_2 == 1 and sign_3 == 1 and sign_4 == 0 and sign_5 == 0:            
-                    value_detect = ''
-        elif flag_sensor_light == "C":
-            forward_with_speed(speed)
-        elif flag_sensor_light == "R":
-            turn_right(10)
-        elif flag_sensor_light == "RM":
-            turn_right_max()
-        elif flag_sensor_light == "L":
-            turn_left(10)
-        elif flag_sensor_light == "LM":
-            turn_left_max()
-    if(key==ord('q')):
-        GPIO.output(relayLed, GPIO.LOW)
-        break
-    
-GPIO.output(inRight1, GPIO.LOW)
-GPIO.output(inRight2, GPIO.LOW)
-GPIO.output(inLeft1, GPIO.LOW)
-GPIO.output(inLeft2, GPIO.LOW)
-cap.release()
-cv2.destroyAllWindows()
+    GPIO.output(inRight1, GPIO.LOW)
+    GPIO.output(inRight2, GPIO.LOW)
+    GPIO.output(inLeft1, GPIO.LOW)
+    GPIO.output(inLeft2, GPIO.LOW)
+    cap.release()
+    cv2.destroyAllWindows()
+run(list_villa)
