@@ -1,10 +1,9 @@
-# from object.noti_object import NoteNoti
 from paho.mqtt import client as mqtt
 from object import *
 import json
 import requests
 import getmac
-import main
+from main import run
 
 CODE = "VH001"
 USERNAME = "vehicle_1"
@@ -13,17 +12,18 @@ HOST = "96cd623ad07c45fb886782e9f77079d2.s1.eu.hivemq.cloud"
 PORT = 8883
 
 API_ENDPOINT = "http://localhost:8080"
-URI_SEND_NOTI = "/api/vehicle/send-noti"
+API_ENDPOINT_ONLINE = "https://sc-mavr-api.herokuapp.com"
+URI_SEND_NOTI = "/api/vehicle/login"
 HEADERS = {'Content-Type': 'application/json'}
 
 def connect() -> mqtt:
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
-            mac_address = json.dumps(Login(getmac.get_mac_address()).__dict__)
+            mac_address = getmac.get_mac_address()
+            print(mac_address)
             print(USERNAME+" Connected successfully")
-#             note_noti = NoteNoti("Vehicle connected successfully", "Mac-Address: "+mac_address,{"mac_address": mac_address})
-            # r = requests.post(url = API_ENDPOINT + URI_SEND_NOTI, headers=HEADERS, data = json.dumps(note_noti.__dict__))
-#             print(r.status_code)
+            x = requests.get(API_ENDPOINT_ONLINE + URI_SEND_NOTI+"?vehicle_code=" + CODE + "&mac_address="+mac_address)
+            print(x.status_code)
         else:
             print("Failed to connect, return code %d\n", rc)
     client = mqtt.Client()
@@ -34,10 +34,7 @@ def connect() -> mqtt:
     return client
 
 def on_message(client, userdata, msg):
-    array = {}
-
-    
-#     print("Received message: " + msg.topic + " -> " + msg.payload.decode("utf-8"))
+    print("Received message: " + msg.topic + " -> " + msg.payload.decode("utf-8"))
     messages = msg.payload.decode("utf-8")
     if((msg.topic == "sc-mavr/vehicle/check-connect") and (messages == "MASTER")):
         client.publish("sc-mavr/server/check-connect",CODE)
@@ -45,13 +42,7 @@ def on_message(client, userdata, msg):
     if(msg.topic == "sc-mavr/vehicle/order"):
         data = json.loads(messages)
         if(data["code"] == CODE):
-            for key, value in data["theWay"].items():
-                if not key[1].isdigit():
-                    array[key.upper()] = value.upper()
-            
-#             print(data["theWay"])
-            main.run(array)
-            
+            run(data["theWay"])
 def start():
     client = connect()
     client.subscribe("sc-mavr/vehicle/check-connect")

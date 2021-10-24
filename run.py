@@ -1,5 +1,4 @@
 import main
-import cam_real_time
 
 list_villa = {
     "HOME": "left",

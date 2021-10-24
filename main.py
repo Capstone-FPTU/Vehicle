@@ -11,6 +11,8 @@ import numpy
 from imutils.perspective import four_point_transform
 import time
 import argparse
+from flask import Flask, render_template, Response
+
 enRight = 12
 enLeft = 13
 
@@ -89,23 +91,6 @@ flag_turn_sos_p = 0
 flag_skip = 0
 sec = 0
 sec_person = 0
-# detect person
-parser = argparse.ArgumentParser(description='Use MobileNet SSD on Pi for object detection')
-parser.add_argument("--prototxt", default="MobileNetSSD_deploy.prototxt")
-parser.add_argument("--weights", default="MobileNetSSD_deploy.caffemodel")
-argsPer = parser.parse_args()
-
-net = cv2.dnn.readNetFromCaffe(argsPer.prototxt, argsPer.weights)
-
-list_villa = {
-    "HOME": "left",
-    "SONA": "forward",
-    "YUMMI": "forward",
-    "NAMI": "forward",
-    "LULU": "stop",
-    "LUX": "right",
-    "TEEMO": "stop"
-}
 
             
 def forward_with_speed(speed):
@@ -281,6 +266,13 @@ def call_thread_detect_person(frame):
     x.join()
 
 def run(list_villa):
+    # detect person
+    parser = argparse.ArgumentParser(description='Use MobileNet SSD on Pi for object detection')
+    parser.add_argument("--prototxt", default="MobileNetSSD_deploy.prototxt")
+    parser.add_argument("--weights", default="MobileNetSSD_deploy.caffemodel")
+    argsPer = parser.parse_args()
+
+    net = cv2.dnn.readNetFromCaffe(argsPer.prototxt, argsPer.weights)
     global value_detect, villa_name, value_person
     while True:
         flag_detect = 0
@@ -398,4 +390,3 @@ def run(list_villa):
     GPIO.output(inLeft2, GPIO.LOW)
     cap.release()
     cv2.destroyAllWindows()
-run(list_villa)

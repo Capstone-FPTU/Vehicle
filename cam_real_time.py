@@ -1,38 +1,33 @@
-#Modified by smartbuilds.io
-#Date: 27.09.20
-#Desc: This web application serves a motion JPEG stream
-# main.py
-# import the necessary packages
-from flask import Flask, render_template, Response, request
-from camera import VideoCamera
-import time
-import threading
-import os
+#!/usr/bin/env python
+from flask import Flask, render_template, Response
+import cv2
+import socket
+import io
 
-pi_camera = VideoCamera(flip=False) # flip pi camera if upside down.
-
-# App Globals (do not edit)
 app = Flask(__name__)
+vc = cv2.VideoCapture(0)
+
 
 @app.route('/')
 def index():
-    return render_template('index.html') #you can customze index.html here
+    """Video streaming"""
+    return render_template('index.html')
 
-def gen(camera):
-    #get camera frame
+
+def gen():
+    """Video streaming generator function."""
     while True:
-        frame = camera.get_frame()
+        rval, frame = vc.read()
+        cv2.imwrite('image.jpg', frame)
         yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+               b'Content-Type: image/jpeg\r\n\r\n' + open('image.jpg', 'rb').read() + b'\r\n')
+
 
 @app.route('/video_feed')
 def video_feed():
-    return Response(gen(pi_camera),
+    """Video streaming route. Put this in the src attribute of an img tag."""
+    return Response(gen(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
-if __name__ == '__main__':
 
-    app.run(host='0.0.0.0', debug=False)
-    
-
-
+app.run(host='0.0.0.0', debug=True, threaded=True)
