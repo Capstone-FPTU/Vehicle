@@ -6,10 +6,10 @@ list_villa = {
     "YUMMI": "forward",
     "NAMI": "forward",
     "LULU": "right",
-    "LUX": "left",
+    "LUX": "right",
     "TEEMO": "stop",
     "P1": "right",
-    "SONA": "parking",
+    "SONA": "right",
 }
 array = {}
 turn_value = ''
@@ -17,6 +17,6 @@ for key, value in list_villa.items():
     if not key[1].isdigit():
         array[key.upper()] = value.upper()
     if key == "HOME":
-        turn_value = value
-run(array)
+        turn_value = value.upper()
+run(array, turn_value)
 # go_out_parking(turn_value)
