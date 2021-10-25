@@ -26,22 +26,25 @@ def connect() -> mqtt:
 
 def on_message(client, userdata, msg):
     print("Received message: " + msg.topic + " -> " + msg.payload.decode("utf-8"))
-    messages = msg.payload.decode("utf-8")
-    if((msg.topic == "sc-mavr/vehicle/check-connect") and (messages == "MASTER")):
-        client.publish("sc-mavr/server/check-connect",CODE)
+    data = json.loads(msg.payload.decode("utf-8"))
     turn_value = ''
-    if(msg.topic == "sc-mavr/vehicle/order"):
-        data = json.loads(messages)
-        if(data["code"] == CODE):
+    if(data["code"] == CODE):
+        if(msg.topic == "sc-mavr/vehicle/order"):
             for key, value in data["theWay"].items():
                 if key == "HOME":
                     turn_value = value.upper()
             print(turn_value)
             run(data["theWay"], turn_value)
+        if(msg.topic == "sc-mavr/vehicle/new-order"):
+            if(data["code"] == CODE):
+                pass
+                # ham_an_nut()
+            
 def start():
     client = connect()
     client.subscribe("sc-mavr/vehicle/check-connect")
     client.subscribe("sc-mavr/vehicle/order")
+    client.subscribe("sc-mavr/vehicle/new-order")
     client.on_message = on_message
     client.loop_forever()
 
