@@ -11,7 +11,7 @@ import numpy
 from imutils.perspective import four_point_transform
 import time
 import argparse
-from flask import Flask, render_template, Response
+
 
 enRight = 12
 enLeft = 13
@@ -52,7 +52,7 @@ GPIO.output(inRight2, GPIO.LOW)
 GPIO.output(inLeft1, GPIO.LOW)
 GPIO.output(inLeft2, GPIO.LOW)
 
-
+dis = 20
 # roley
 relay = 3
 relayLed = 5
@@ -64,7 +64,7 @@ GPIO.output(relay, GPIO.LOW)
 GPIO.output(relayLed, GPIO.LOW)
 frequency = 1000
 speed = 100
-speedTurn = 100
+speedTurn = 90
 runLeft = GPIO.PWM(enLeft, frequency)
 runRight = GPIO.PWM(enRight, frequency)
 runLeft.start(speed)
@@ -75,12 +75,13 @@ cap = cv2.VideoCapture(0)
 flag_prioritize = 0
 detect = None
 sensor = DistanceSensor(echo=25, trigger=24, max_distance=5)
-
+net = ''
 flag_sensor_light = "C"
 flag_detect = 0
 value_detect = ''
 villa_name = ''
 value = ''
+flag_derection_return_home = ""
 sign_1 = 0
 sign_2 = 0
 sign_3 = 0
@@ -91,8 +92,8 @@ flag_turn_sos_p = 0
 flag_skip = 0
 sec = 0
 sec_person = 0
-
-            
+flag_count_parking = 0
+flag_turn_parking = 0            
 def forward_with_speed(speed):
     runLeft.ChangeDutyCycle(speed)
     runRight.ChangeDutyCycle(speed)
@@ -186,12 +187,12 @@ def detect_villa(frame):
         morphological_img = cv2.morphologyEx(frame, cv2.MORPH_GRADIENT, kernel)
         canny_img = cv2.Canny(morphological_img, 200, 300)
         contours, _ = cv2.findContours(canny_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        coutours = sorted(contours, key=cv2.contourArea, reverse=True)
+        contours = sorted(contours, key=cv2.contourArea, reverse=True)
         for contour in contours:
             area = cv2.contourArea(contour)
             peri = cv2.arcLength(contour, True)
             approx = cv2.approxPolyDP(contour, 0.015 * peri, True)
-            if len(approx) == 4 and area > 5000:
+            if len(approx) == 4 and area > 4000:
                 x, y, w, h = cv2.boundingRect(approx)
                 if w > h:
                     ROI = four_point_transform(frame, approx.reshape(4, 2))
@@ -201,8 +202,6 @@ def detect_villa(frame):
                     height = int(ROI.shape[0] * scale_percent / 100)
                     dim = (width, height)
                     resized = cv2.resize(ROI, dim, interpolation = cv2.INTER_AREA)                    
-                    
-                    
                     cv2.imwrite("ROI.png",resized)
                     custom_config = r'c tessedit_char_whitelist=HOMELUXTEPYNAIS --psm 6'
                     villa_name = pytesseract.image_to_string(resized, config=custom_config, lang='eng')
@@ -236,6 +235,13 @@ def call_thread_led_sign():
     
 def detect_person(frame):
     global value_person
+    # detect person
+    parser = argparse.ArgumentParser(description='Use MobileNet SSD on Pi for object detection')
+    parser.add_argument("--prototxt", default="MobileNetSSD_deploy.prototxt")
+    parser.add_argument("--weights", default="MobileNetSSD_deploy.caffemodel")
+    argsPer = parser.parse_args()
+
+    net = cv2.dnn.readNetFromCaffe(argsPer.prototxt, argsPer.weights)
     # Resize anh ve 300x300
     frame_resized = cv2.resize(frame, (300, 300))
 
@@ -265,23 +271,78 @@ def call_thread_detect_person(frame):
     x.start()
     x.join()
 
-def run(list_villa):
-    # detect person
-    parser = argparse.ArgumentParser(description='Use MobileNet SSD on Pi for object detection')
-    parser.add_argument("--prototxt", default="MobileNetSSD_deploy.prototxt")
-    parser.add_argument("--weights", default="MobileNetSSD_deploy.caffemodel")
-    argsPer = parser.parse_args()
+    #Vehicle_1 go Parking_Left
+def turn_into_home(turn):
+    global flag_count_parking
+    if flag_count_parking == 0:
+        flag_turn_parking= 0
+        while True:
+            frame = call_thread_camera()
+            forward_with_speed(speed)
+            call_thread_led_sign()
+            if turn == "RIGHT":
+                turn_right_max_sos()
+                if sign_4 == 0 and sign_5 ==1:
+                    flag_turn_parking = 1
+            else:
+                turn_left_max_sos()
+                if sign_2 == 0 and sign_1 ==1:
+                    flag_turn_parking = 1
+            if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking ==1:
+                break
+    elif flag_count_parking == 1:
+        flag_turn_parking = 0
+        while True:
+            frame = call_thread_camera()
+            forward_with_speed(speed)
+            call_thread_led_sign()
+            turn_left_max_sos()
+            if sign_2 == 0 and sign_1 ==1:
+                flag_turn_parking =1
+            if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking ==1:
+                break
+    elif flag_count_parking == 2:
+        flag_turn_parking = 0
+        while True:
+            frame = call_thread_camera()
+            forward_with_speed(speed)
+            turn_right_max_sos()
+            call_thread_led_sign()
+            if sign_1 == 0 and sign_2 == 1:
+                flag_turn_parking = 1
+            if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking ==1:
+                break
 
-    net = cv2.dnn.readNetFromCaffe(argsPer.prototxt, argsPer.weights)
-    global value_detect, villa_name, value_person
+def go_out_parking(turn):
+    flag_turn_parking = 0
+    while True:
+        frame = call_thread_camera()
+        forward_with_speed(speed)
+        call_thread_led_sign()
+        if turn == "RIGHT":
+            turn_right_max_sos()
+            if sign_4 == 0 and sign_5 ==1:
+                flag_turn_parking =1
+        elif turn == "LEFT":
+            turn_left_max_sos()
+            if sign_2 == 0 and sign_1 ==1:
+                flag_turn_parking =1
+        if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking ==1:
+                break
+def run(list_villa):
+    global value_detect, villa_name, value_person, flag_skip, sec
+    global flag_derection_return_home, flag_turn_sos_p, flag_count_parking, flag_turn_parking
+    
     while True:
         flag_detect = 0
         frame = call_thread_camera()
         key = cv2.waitKey(1)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         cv2.imshow("New Vehicle", frame)
+        
+#         print(flag_sensor_light)
         # detect distance
-        while sensor.distance * 100 < 35 and value_person == 0:
+        while sensor.distance * 100 < dis and value_person == 0:
             stop()
             call_thread_detect_person(frame)
             if value_person > 0:
@@ -296,12 +357,14 @@ def run(list_villa):
         call_thread_led_sign()
         call_thread_follow_line(sign_1, sign_2, sign_3, sign_4, sign_5)
         GPIO.output(relayLed, GPIO.LOW)
-        if value_detect == "PARKING":
-            # call function Parking
-            pass
         if value_detect == "STOP":
             stop()
             key = ord('q')
+        if flag_sensor_light == "SOS_P" and flag_derection_return_home != "":
+            flag_count_parking = flag_count_parking + 1
+            turn_into_home(flag_derection_return_home)
+            if flag_count_parking == 2:
+                key = ord('q')
         if flag_sensor_light == "SOS_P":
             if value_detect == "":
                 GPIO.output(relayLed,GPIO.HIGH)
@@ -330,9 +393,9 @@ def run(list_villa):
                 forward_with_speed(speed)
                 call_thread_follow_line(sign_1, sign_2, sign_3, sign_4, sign_5)
             elif value_detect != "" and flag_skip == 0 and time.time() - sec > 1:
-    #         else:
                 forward_with_speed(speed)
                 call_thread_follow_line(sign_1, sign_2, sign_3, sign_4, sign_5)
+                flag_turn_parking = 0
                 if flag_turn_sos_p == 1:
                     if value_detect == "FORWARD":
                         forward_with_speed(speed)
@@ -342,34 +405,80 @@ def run(list_villa):
                         frame = call_thread_camera()
                         turn_left_max_sos()
                         call_thread_led_sign()
-                        if sign_1 == 0 and sign_2 == 0 and sign_3 == 1 and sign_4 == 1 and sign_5 == 1:
+                        if sign_2 == 0 and sign_1 ==1:
+                            flag_turn_parking = 1
+                        if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking == 1:
                             value_detect = ''
+                            break
+#                         if sign_1 == 0 and sign_2 == 0 and sign_3 == 1 and sign_4 == 1 and sign_5 == 1:
+#                             value_detect = ''
                     while value_detect == "RIGHT" and flag_detect == 0 and time.time() - sec > 1:
                         frame = call_thread_camera()
                         turn_right_max_sos()
                         call_thread_led_sign()
-                        if sign_1 == 1 and sign_2 == 1 and sign_3 == 1 and sign_4 == 0 and sign_5 == 0:            
+                        if sign_4 == 0 and sign_5 == 1:
+                            flag_turn_parking = 1
+                        if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking == 1:
                             value_detect = ''
+                            break
+#                         if sign_1 == 1 and sign_2 == 1 and sign_3 == 1 and sign_4 == 0 and sign_5 == 0:            
+#                             value_detect = ''
+                    
+                    
     #     nga ba 
         else:
-            
             flag_turn_sos_p = 1
             forward_with_speed(speed)
+            call_thread_follow_line(sign_1, sign_2, sign_3, sign_4, sign_5)
+            # nga ba
             
             if flag_sensor_light == "SOS_L":
+                flag_turn_parking = 0
+                if flag_skip == 1 and time.time() - sec > 1:
+                    sec = time.time()
+                    flag_skip = 0
+                if value_detect == "PARKING" and flag_derection_return_home == "" and flag_skip == 0 and time.time() - sec > 1:
+                    flag_derection_return_home = "LEFT"
+                    turn_into_home(flag_derection_return_home)
                 while value_detect == "LEFT" and flag_detect == 0 and flag_skip == 0 and time.time() - sec > 0.5:
                     frame = call_thread_camera()
                     turn_left_max_sos()
                     call_thread_led_sign()
-                    if sign_1 == 0 and sign_2 == 0 and sign_3 == 1 and sign_4 == 1 and sign_5 == 1:
+                    if sign_5 == 0:
+                        flag_turn_parking = 1
+                    if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking == 1:
                         value_detect = ''
+                        break
+                
+#                 while value_detect == "LEFT" and flag_detect == 0 and flag_skip == 0 and time.time() - sec > 0.5:
+#                     frame = call_thread_camera()
+#                     turn_left_max_sos()
+#                     call_thread_led_sign()
+#                     if sign_1 == 0 and sign_2 == 0 and sign_3 == 1 and sign_4 == 1 and sign_5 == 1:
+#                         value_detect = ''
             elif flag_sensor_light == "SOS_R":
+                flag_turn_parking = 0
+                if flag_skip == 1 and time.time() - sec > 1:
+                    sec = time.time()
+                    flag_skip = 0
+                if value_detect == "PARKING" and flag_derection_return_home == "" and flag_skip == 0 and time.time() - sec > 1:
+                    flag_derection_return_home = "RIGHT"
+                    turn_into_home(flag_derection_return_home)
                 while value_detect == "RIGHT" and flag_detect == 0 and flag_skip == 0 and time.time() - sec > 0.5:
                     frame = call_thread_camera()
                     turn_right_max_sos()
                     call_thread_led_sign()
-                    if sign_1 == 1 and sign_2 == 1 and sign_3 == 1 and sign_4 == 0 and sign_5 == 0:            
+                    if sign_1 == 0:
+                        flag_turn_parking = 1
+                    if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking == 1:
                         value_detect = ''
+                        break
+#                 while value_detect == "RIGHT" and flag_detect == 0 and flag_skip == 0 and time.time() - sec > 0.5:
+#                     frame = call_thread_camera()
+#                     turn_right_max_sos()
+#                     call_thread_led_sign()
+#                     if sign_1 == 1 and sign_2 == 1 and sign_3 == 1 and sign_4 == 0 and sign_5 == 0:            
+#                         value_detect = ''
             elif flag_sensor_light == "C":
                 forward_with_speed(speed)
             elif flag_sensor_light == "R":
