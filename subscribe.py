@@ -38,11 +38,15 @@ def on_message(client, userdata, msg):
     messages = msg.payload.decode("utf-8")
     if((msg.topic == "sc-mavr/vehicle/check-connect") and (messages == "MASTER")):
         client.publish("sc-mavr/server/check-connect",CODE)
-        
+    turn_value = ''
     if(msg.topic == "sc-mavr/vehicle/order"):
         data = json.loads(messages)
         if(data["code"] == CODE):
-            run(data["theWay"])
+            for key, value in data["theWay"].items():
+                if key == "HOME":
+                    turn_value = value.upper()
+            print(turn_value)
+            run(data["theWay"], turn_value)
 def start():
     client = connect()
     client.subscribe("sc-mavr/vehicle/check-connect")

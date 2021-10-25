@@ -329,10 +329,37 @@ def go_out_parking(turn):
                 flag_turn_parking = 1
         if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking ==1:
                 break
+def reset():
+    print("start")
+    flag_prioritize = 0
+    detect = None
+    net = ''
+    flag_sensor_light = "C"
+    flag_detect = 0
+    value_detect = ''
+    villa_name = ''
+    value = ''
+    flag_derection_return_home = ""
+    sign_1 = 0
+    sign_2 = 0
+    sign_3 = 0
+    sign_4 = 0
+    sign_5 = 0
+    value_person = 0
+    flag_turn_sos_p = 0
+    flag_skip = 0
+    sec = 0
+    sec_person = 0
+    flag_count_parking = 0
+    flag_turn_parking = 0
+    print("end")
+    
 def run(list_villa, home_value):
     global value_detect, villa_name, value_person, flag_skip, sec
     global flag_derection_return_home, flag_turn_sos_p, flag_count_parking, flag_turn_parking
     flag_go_out = 0
+    if home_value == '':
+        flag_go_out = 1
     while True:
         flag_detect = 0
         frame = call_thread_camera()
@@ -359,7 +386,11 @@ def run(list_villa, home_value):
         GPIO.output(relayLed, GPIO.LOW)
         if value_detect == "STOP":
             stop()
-            key = ord('q')
+            reset()
+            value_detect = ''
+            flag_go_out = 0
+            flag_skip = 0
+            return 0
         if flag_sensor_light == "SOS_P" and flag_derection_return_home != "":
             flag_count_parking = flag_count_parking + 1
             turn_into_home(flag_derection_return_home)
