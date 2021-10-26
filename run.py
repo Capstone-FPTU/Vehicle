@@ -1,5 +1,6 @@
 # import main
 from main import run, go_out_parking
+from button_start_vehicle import start_button
 list_villa = {
     "HOME": "left",
     "SONA": "right",
@@ -25,3 +26,4 @@ for key, value in list_villa.items():
         turn_value = value.upper()
 # run(array, turn_value)
 # go_out_parking(turn_value)
+start_button()

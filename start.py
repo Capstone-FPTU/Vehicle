@@ -5,7 +5,7 @@ import json
 import requests
 import getmac
 import time
-
+from button_start_vehicle import start_button
 
 def connect() -> mqtt:
     def on_connect(client, userdata, flags, rc):
@@ -37,8 +37,8 @@ def on_message(client, userdata, msg):
             run(data["theWay"], turn_value)
         if(msg.topic == "sc-mavr/vehicle/new-order"):
             if(data["code"] == CODE):
-                pass
                 # ham_an_nut()
+                start_button()
             
 def start():
     client = connect()
