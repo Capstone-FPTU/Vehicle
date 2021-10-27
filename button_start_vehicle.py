@@ -3,7 +3,7 @@ import RPi.GPIO as GPIO
 import cv2
 import requests
 from common import *
-relay = 5
+relay = 19
 button = 4
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
@@ -24,6 +24,5 @@ def start_button():
         GPIO.output(relay, GPIO.LOW)
         if status == 200:
             return 0
-        else:
-            print("Error Calling")
+        
     GPIO.cleanup()

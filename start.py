@@ -33,12 +33,10 @@ def on_message(client, userdata, msg):
             for key, value in data["theWay"].items():
                 if key == "HOME":
                     turn_value = value.upper()
-            print(turn_value)
             run(data["theWay"], turn_value)
         if(msg.topic == "sc-mavr/vehicle/new-order"):
-            if(data["code"] == CODE):
-                # ham_an_nut()
-                start_button()
+            print("button")
+            start_button()
             
 def start():
     client = connect()
