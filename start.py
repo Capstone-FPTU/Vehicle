@@ -6,6 +6,7 @@ import requests
 import getmac
 import time
 from button_start_vehicle import start_button
+from urllib.request import urlopen
 
 def connect() -> mqtt:
     def on_connect(client, userdata, flags, rc):
@@ -45,8 +46,16 @@ def start():
     client.subscribe("sc-mavr/vehicle/new-order")
     client.on_message = on_message
     client.loop_forever()
-
+def internet_on():
+    try:
+        response = urlopen('https://www.google.com/', timeout=1)
+        return True
+    except: 
+        return False
 # START
-start()
+while True:
+    if internet_on():
+        start()
+        break
 time.sleep(0.5)
 
