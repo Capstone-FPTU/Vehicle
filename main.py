@@ -271,11 +271,11 @@ def call_thread_detect_person(frame):
     x.start()
     x.join()
 
-    #Vehicle_1 go Parking_Left
+    #Vehicle_2 go Parking_Right
 def turn_into_home(turn):
     global flag_count_parking
     if flag_count_parking == 0:
-        flag_turn_parking= 0
+        flag_turn_parking = 0
         while True:
             frame = call_thread_camera()
             forward_with_speed(speed)
@@ -287,7 +287,7 @@ def turn_into_home(turn):
             else:
                 turn_left_max_sos()
                 if sign_2 == 0 and sign_1 ==1:
-                    flag_turn_parking = 1
+                    flag_turn_parking =1
             if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking ==1:
                 break
     elif flag_count_parking == 1:
@@ -295,10 +295,10 @@ def turn_into_home(turn):
         while True:
             frame = call_thread_camera()
             forward_with_speed(speed)
+            turn_right_max_sos()
             call_thread_led_sign()
-            turn_left_max_sos()
-            if sign_2 == 0 and sign_1 ==1:
-                flag_turn_parking =1
+            if sign_4 == 0 and sign_5 ==1:
+                    flag_turn_parking =1
             if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking ==1:
                 break
     elif flag_count_parking == 2:
@@ -308,11 +308,51 @@ def turn_into_home(turn):
             forward_with_speed(speed)
             turn_right_max_sos()
             call_thread_led_sign()
-            if sign_1 == 0 and sign_2 == 1:
-                flag_turn_parking = 1
+            if sign_2 == 0 and sign_1 == 1:
+                flag_turn_parking =1
             if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking ==1:
                 break
-
+#Vehicle_1 go Parking_Left
+# def turn_into_home(turn):
+#     global flag_count_parking
+#     if flag_count_parking == 0:
+#         flag_turn_parking= 0
+#         while True:
+#             frame = call_thread_camera()
+#             forward_with_speed(speed)
+#             call_thread_led_sign()
+#             if turn == "RIGHT":
+#                 turn_right_max_sos()
+#                 if sign_4 == 0 and sign_5 ==1:
+#                     flag_turn_parking =1
+#             else:
+#                 turn_left_max_sos()
+#                 if sign_2 == 0 and sign_1 ==1:
+#                     flag_turn_parking =1
+#             if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking ==1:
+#                 break
+#     elif flag_count_parking == 1:
+#         flag_turn_parking = 0
+#         while True:
+#             frame = call_thread_camera()
+#             forward_with_speed(speed)
+#             call_thread_led_sign()
+#             turn_left_max_sos()
+#             if sign_2 == 0 and sign_1 ==1:
+#                 flag_turn_parking =1
+#             if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking ==1:
+#                 break
+#     elif flag_count_parking == 2:
+#         flag_turn_parking = 0
+#         while True:
+#             frame = call_thread_camera()
+#             forward_with_speed(speed)
+#             turn_right_max_sos()
+#             call_thread_led_sign()
+#             if sign_1 == 0 and sign_2 == 1:
+#                 flag_turn_parking =1
+#             if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking ==1:
+#                 break
 def go_out_parking(turn):
     flag_turn_parking = 0
     while True:
@@ -365,7 +405,7 @@ def run(list_villa, home_value):
         frame = call_thread_camera()
         key = cv2.waitKey(1)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        cv2.imshow("New Vehicle", frame)
+#         cv2.imshow("New Vehicle", frame)
         
 #         print(flag_sensor_light)
         # detect distance
