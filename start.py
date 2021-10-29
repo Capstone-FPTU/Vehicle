@@ -7,7 +7,7 @@ import getmac
 import time
 from button_start_vehicle import start_button
 from urllib.request import urlopen
-
+from scan_qr import open_box
 def connect() -> mqtt:
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
@@ -38,12 +38,15 @@ def on_message(client, userdata, msg):
         if(msg.topic == "sc-mavr/vehicle/new-order"):
             print("button")
             start_button()
-            
+        if(msg.topic == "sc-mavr/vehicle/open-box"):
+            print('open box')
+            open_box()
 def start():
     client = connect()
     client.subscribe("sc-mavr/vehicle/check-connect")
     client.subscribe("sc-mavr/vehicle/order")
     client.subscribe("sc-mavr/vehicle/new-order")
+    client.subscribe("sc-mavr/vehicle/open-box")
     client.on_message = on_message
     client.loop_forever()
 def internet_on():
@@ -55,7 +58,7 @@ def internet_on():
 # START
 while True:
     if internet_on():
-        start()
         break
+start()
 time.sleep(0.5)
 

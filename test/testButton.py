@@ -2,8 +2,8 @@ from time import sleep
 import RPi.GPIO as GPIO
 import cv2
 
-# relay = 19   #khoa dien
-relay = 5   #den led
+relay = 19   #khoa dien
+# relay = 5   #den led
 button = 4
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)

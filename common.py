@@ -14,3 +14,5 @@ API_ENDPOINT = "https://sc-mavr-api.herokuapp.com"
 
 URI_SEND_NOTI = "/api/vehicle/login"
 URI_START_DELIVERY = "/api/vehicle/start-delivery-order"
+URI_ARRIVED = '/api/vehicle/arrived'
+URI_TRACKING = '/api/vehicle/tracking'

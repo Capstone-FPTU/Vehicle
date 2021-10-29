@@ -11,7 +11,9 @@ import numpy
 from imutils.perspective import four_point_transform
 import time
 import argparse
-
+import requests
+from common import *
+import requests
 
 enRight = 12
 enLeft = 13
@@ -403,6 +405,7 @@ def run(list_villa, home_value):
     while True:
         flag_detect = 0
         frame = call_thread_camera()
+        cv2.imwrite("image.jpg", frame)
         key = cv2.waitKey(1)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 #         cv2.imshow("New Vehicle", frame)
@@ -430,6 +433,8 @@ def run(list_villa, home_value):
             value_detect = ''
             flag_go_out = 0
             flag_skip = 0
+            x = requests.get(API_ENDPOINT + URI_ARRIVED + "?vehicle_code=" + CODE)
+            print(x.status_code)
             return 0
         if flag_sensor_light == "SOS_P" and flag_derection_return_home != "":
             flag_count_parking = flag_count_parking + 1
@@ -447,6 +452,10 @@ def run(list_villa, home_value):
                     villa = "".join(filter(str.isalnum, villa_name))        
                 try:
                     value_detect = list_villa[villa].upper().strip()
+                    # call api villa
+                    x = requests.get(API_ENDPOINT + URI_TRACKING+"?vehicle_code=" + CODE + "&villa_name="+villa_name)
+                    print(x.status_code)
+                    #end call
                     villa_name = ''
                     villa = ''
                     flag_detect = 1
