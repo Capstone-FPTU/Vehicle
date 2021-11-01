@@ -12,7 +12,6 @@ GPIO.setup(button, GPIO.IN)
 GPIO.output(relay, GPIO.LOW)
 pressButton = 1
 def start_button():
-    print("zo")
     status = 0
     while True:
         pressButton = GPIO.input(button)

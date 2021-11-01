@@ -15,5 +15,6 @@ def open_box():
         GPIO.output(relay, GPIO.HIGH)
         if time.time() - sec >= time_close:
             GPIO.output(relay, GPIO.LOW)
-            break
+            return True
+    return False
     GPIO.cleanup()

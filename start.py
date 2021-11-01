@@ -1,13 +1,14 @@
 from paho.mqtt import client as mqtt
 from common import *
 from main import run
+from button_start_vehicle import start_button
+from urllib.request import urlopen
+from scan_qr import open_box
 import json
 import requests
 import getmac
 import time
-from button_start_vehicle import start_button
-from urllib.request import urlopen
-from scan_qr import open_box
+
 def connect() -> mqtt:
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
@@ -24,29 +25,53 @@ def connect() -> mqtt:
     client.username_pw_set(USERNAME, PASSWORD)
     client.connect(HOST, PORT)
     return client
-
+theWay = ''
 def on_message(client, userdata, msg):
+    global theWay
     print("Received message: " + msg.topic + " -> " + msg.payload.decode("utf-8"))
     data = json.loads(msg.payload.decode("utf-8"))
     turn_value = ''
+    print("Ngoai 1:", theWay)
     if(data["code"] == CODE):
         if(msg.topic == "sc-mavr/vehicle/order"):
-            for key, value in data["theWay"].items():
+            theWay = data["theWay"]
+            print("Trong: ", theWay)
+            for key, value in theWay.items():
                 if key == "HOME":
                     turn_value = value.upper()
-            run(data["theWay"], turn_value)
+            run(theWay, turn_value, CODE)
         if(msg.topic == "sc-mavr/vehicle/new-order"):
             print("button")
             start_button()
+        if(msg.topic == "sc-mavr/vehicle/going-home"):
+#             print("going-home: ", data["theWay"])
+#             oldWay = []
+#             for key, value in data["theWay"].items():
+#                 oldWay.append(key)
+            run(data["theWay"], '', CODE)
         if(msg.topic == "sc-mavr/vehicle/open-box"):
             print('open box')
-            open_box()
+            value = open_box()
+            print(value)
+            if value == True:
+                print("di ve")
+                oldWay = []
+                for key, _ in theWay.items():
+                    oldWay.append(key)
+
+                print("Before:",oldWay[len(oldWay)-2])
+                print("start:",oldWay[len(oldWay)-1])
+                requests.get(API_ENDPOINT + URI_GO_TO_HOME+"?vehicle_code=" + CODE + "&before_node="+ oldWay[len(oldWay)-2] + "&start_node="+oldWay[len(oldWay)-1])
+#                 if x.status_code == 200:
+#                     theWay = data["theWay"]
+                    
 def start():
     client = connect()
     client.subscribe("sc-mavr/vehicle/check-connect")
     client.subscribe("sc-mavr/vehicle/order")
     client.subscribe("sc-mavr/vehicle/new-order")
     client.subscribe("sc-mavr/vehicle/open-box")
+    client.subscribe("sc-mavr/vehicle/going-home")
     client.on_message = on_message
     client.loop_forever()
 def internet_on():
