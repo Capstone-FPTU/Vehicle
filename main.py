@@ -4,14 +4,11 @@ import RPi.GPIO as GPIO
 from gpiozero import DistanceSensor
 import datetime
 import pytesseract
-import numpy as np
 import concurrent.futures as cf
 import threading
-import numpy
 from imutils.perspective import four_point_transform
 import time
 import argparse
-import requests
 from common import *
 import requests
 
@@ -413,19 +410,23 @@ def turn_180():
         if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking == 1:
             break
 
-def run(list_villa, home_value, code):
+def run(list_villa, home_value, code, isTurning, value_turning):
     global value_detect, villa_name, value_person, flag_skip, sec
     global flag_derection_return_home, flag_turn_sos_p, flag_count_parking, flag_turn_parking
     flag_go_out = 0
     if home_value == '':
         flag_go_out = 1
+        
+    if value_turning:
+        value_detect = value_turning
     while True:
         flag_detect = 0
         frame = call_thread_camera()
         cv2.imwrite("image.jpg", frame)
         key = cv2.waitKey(1)
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        print("value_detect:",value_detect)
+        if isTurning:
+            turn_180()
+            isTurning = False
 #         cv2.imshow("New Vehicle", frame)
         
 #         print(flag_sensor_light)
@@ -451,8 +452,7 @@ def run(list_villa, home_value, code):
             value_detect = ''
             flag_go_out = 0
             flag_skip = 0
-            x = requests.get(API_ENDPOINT + URI_ARRIVED + "?vehicle_code=" + CODE)
-            print(x.status_code)
+            requests.get(API_ENDPOINT + URI_ARRIVED + "?vehicle_code=" + CODE)
             return 0
         if flag_sensor_light == "SOS_P" and flag_derection_return_home != "":
             flag_count_parking = flag_count_parking + 1
@@ -524,7 +524,10 @@ def run(list_villa, home_value, code):
             forward_with_speed(speed)
             call_thread_follow_line(sign_1, sign_2, sign_3, sign_4, sign_5)
             # nga ba
-            
+            if value_detect == "FORWARD":
+                forward_with_speed(speed)
+                value_detect = ''
+                flag_turn_sos_p = 0
             if flag_sensor_light == "SOS_L":
                 if flag_go_out == 0:
                     go_out_parking("LEFT")

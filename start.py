@@ -35,20 +35,18 @@ def on_message(client, userdata, msg):
     if(data["code"] == CODE):
         if(msg.topic == "sc-mavr/vehicle/order"):
             theWay = data["theWay"]
-            print("Trong: ", theWay)
             for key, value in theWay.items():
                 if key == "HOME":
                     turn_value = value.upper()
-            run(theWay, turn_value, CODE)
+            run(theWay, turn_value, CODE, data["turning"], '')
         if(msg.topic == "sc-mavr/vehicle/new-order"):
             print("button")
             start_button()
         if(msg.topic == "sc-mavr/vehicle/going-home"):
-#             print("going-home: ", data["theWay"])
-#             oldWay = []
-#             for key, value in data["theWay"].items():
-#                 oldWay.append(key)
-            run(data["theWay"], '', CODE)
+            for key, value in data["theWay"].items():
+                turn_value = value.upper()
+                break
+            run(data["theWay"], '', CODE, data["turning"], turn_value)
         if(msg.topic == "sc-mavr/vehicle/open-box"):
             print('open box')
             value = open_box()
