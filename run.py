@@ -2,9 +2,10 @@
 from main import run, go_out_parking
 from button_start_vehicle import start_button
 list_villa = {
-    "HOME": "left",
-    "SONA": "right",
-    "NAMI": "stop"
+    "HOME": "LEFT",
+    "SONA": "RIGHT",
+    "NAMI": "RIGHT",
+    "LUX": "PARKING"
 }
 values_view = list_villa.values()
 value_iterator = iter(values_view)
@@ -18,6 +19,6 @@ for key, value in list_villa.items():
         array[key.upper()] = value.upper()
     if key == "HOME":
         turn_value = value.upper()
-run(array, turn_value)
+run(list_villa, '', 'VH001', False, turn_value, '')
 # go_out_parking(turn_value)
 # start_button()

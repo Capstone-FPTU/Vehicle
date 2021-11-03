@@ -510,7 +510,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                         frame = call_thread_camera()
                         turn_left_max_sos()
                         call_thread_led_sign()
-                        if sign_1 == 0:
+                        if sign_5 == 0:
                             flag_turn_parking = 1
                         if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking == 1:
                             value_detect = ''
@@ -532,7 +532,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                         frame = call_thread_camera()
                         turn_right_max_sos()
                         call_thread_led_sign()
-                        if sign_5 == 0:
+                        if sign_1 == 0:
                             flag_turn_parking = 1
                         if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking == 1:
                             value_detect = ''
