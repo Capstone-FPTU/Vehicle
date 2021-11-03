@@ -281,11 +281,11 @@ def turn_into_home(turn, code):
             call_thread_led_sign()
             if turn == "RIGHT":
                 turn_right_max_sos()
-                if sign_4 == 0 and sign_5 ==1:
+                if sign_1 == 0:
                     flag_turn_parking =1
             else:
                 turn_left_max_sos()
-                if sign_2 == 0 and sign_1 ==1:
+                if sign_5 == 0:
                     flag_turn_parking =1
             if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking ==1:
                 break
@@ -436,7 +436,6 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                     villa = "".join(filter(str.isalnum, villa_name))        
                 try:
                     value_detect = list_villa[villa].upper().strip()
-                    print("beforenode:",convert_list[convert_list.index(villa) - 1])
                     requests.get(API_ENDPOINT + URI_TRACKING+"?vehicle_code=" + code + "&villa_name="+villa + "&way="+ fullWay + "&before_node=" + convert_list[convert_list.index(villa) - 1])
                     #end call
                     villa_name = ''
@@ -533,7 +532,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                         frame = call_thread_camera()
                         turn_right_max_sos()
                         call_thread_led_sign()
-                        if sign_1 == 0:
+                        if sign_5 == 0:
                             flag_turn_parking = 1
                         if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking == 1:
                             value_detect = ''
