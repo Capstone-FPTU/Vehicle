@@ -45,9 +45,7 @@ def on_message(client, userdata, msg):
         if(msg.topic == "sc-mavr/vehicle/going-home"):
             for key, value in data["theWay"].items():
                 turn_value = value.upper()
-                print("turn_value1:", turn_value)
                 break
-            print("turn_value2:", turn_value)
             run(data["theWay"], '', CODE, data["turning"], turn_value)
         if(msg.topic == "sc-mavr/vehicle/open-box"):
             print('open box')
@@ -62,8 +60,6 @@ def on_message(client, userdata, msg):
                 print("Before:",oldWay[len(oldWay)-2])
                 print("start:",oldWay[len(oldWay)-1])
                 requests.get(API_ENDPOINT + URI_GO_TO_HOME+"?vehicle_code=" + CODE + "&before_node="+ oldWay[len(oldWay)-2] + "&start_node="+oldWay[len(oldWay)-1])
-#                 if x.status_code == 200:
-#                     theWay = data["theWay"]
                     
 def start():
     client = connect()

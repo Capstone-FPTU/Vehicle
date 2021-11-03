@@ -412,7 +412,7 @@ def turn_180():
             break
 
 def run(list_villa, home_value, code, isTurning, value_turning):
-    global value_detect, villa_name, value_person, flag_skip, sec
+    global value_detect, villa_name, value_person, flag_skip, sec, flag_sensor_light
     global flag_derection_return_home, flag_turn_sos_p, flag_count_parking, flag_turn_parking
     flag_go_out = 0
     if home_value == '':
@@ -450,14 +450,23 @@ def run(list_villa, home_value, code, isTurning, value_turning):
         GPIO.output(relayLed, GPIO.LOW)
         if value_detect == "STOP":
             stop()
-            reset()
+#             reset()
+            value_detect = ''
+            flag_go_out = 0
+            flag_skip = 0
             requests.get(API_ENDPOINT + URI_ARRIVED + "?vehicle_code=" + code)
             return 0
         if flag_sensor_light == "SOS_P" and flag_derection_return_home != "":
             flag_count_parking = flag_count_parking + 1
             turn_into_home(flag_derection_return_home, code)
             if flag_count_parking == 2:
-                key = ord('q')
+                stop()
+                flag_sensor_light = ''
+                flag_derection_return_home = ''
+                flag_count_parking = 0
+                requests.get(API_ENDPOINT + URI_FINISH+"?vehicle_code=" + code)
+                return 0
+#                 key = ord('q')
         if flag_sensor_light == "SOS_P":
             if value_detect == "":
                 GPIO.output(relayLed,GPIO.HIGH)
@@ -470,7 +479,7 @@ def run(list_villa, home_value, code, isTurning, value_turning):
                 try:
                     value_detect = list_villa[villa].upper().strip()
                     # call api villa
-                    requests.get(API_ENDPOINT + URI_TRACKING+"?vehicle_code=" + CODE + "&villa_name="+villa)
+                    requests.get(API_ENDPOINT + URI_TRACKING+"?vehicle_code=" + code + "&villa_name="+villa)
                     #end call
                     villa_name = ''
                     villa = ''
@@ -540,11 +549,6 @@ def run(list_villa, home_value, code, isTurning, value_turning):
                     if value_detect == "PARKING" and flag_derection_return_home == "" and flag_skip == 0 and time.time() - sec > 1:
                         flag_derection_return_home = "LEFT"
                         turn_into_home(flag_derection_return_home, code)
-                        reset()
-#                         value_detect = ''
-#                         flag_go_out = 0
-#                         flag_skip = 0
-#                         return 0
                     while value_detect == "LEFT" and flag_detect == 0 and flag_skip == 0 and time.time() - sec > 0.5:
                         frame = call_thread_camera()
                         turn_left_max_sos()
