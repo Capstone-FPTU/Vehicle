@@ -489,10 +489,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
             forward_with_speed(speed)
             call_thread_follow_line(sign_1, sign_2, sign_3, sign_4, sign_5)
             # nga ba
-            if value_detect == "FORWARD":
-                forward_with_speed(speed)
-                value_detect = ''
-                flag_turn_sos_p = 0
+            
             if flag_sensor_light == "SOS_L":
                 if flag_go_out == 0:
                     go_out_parking("LEFT")
@@ -506,6 +503,10 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                     if value_detect == "PARKING" and flag_derection_return_home == "" and flag_skip == 0 and time.time() - sec > 1:
                         flag_derection_return_home = "LEFT"
                         turn_into_home(flag_derection_return_home, code)
+                    if value_detect == "FORWARD":
+                        forward_with_speed(speed)
+                        value_detect = ''
+                        flag_turn_sos_p = 0
                     while value_detect == "LEFT" and flag_detect == 0 and flag_skip == 0 and time.time() - sec > 0.5:
                         frame = call_thread_camera()
                         turn_left_max_sos()
@@ -528,6 +529,10 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                     if value_detect == "PARKING" and flag_derection_return_home == "" and flag_skip == 0 and time.time() - sec > 1:
                         flag_derection_return_home = "RIGHT"
                         turn_into_home(flag_derection_return_home, code)
+                    if value_detect == "FORWARD":
+                        forward_with_speed(speed)
+                        value_detect = ''
+                        flag_turn_sos_p = 0
                     while value_detect == "RIGHT" and flag_detect == 0 and flag_skip == 0 and time.time() - sec > 0.5:
                         frame = call_thread_camera()
                         turn_right_max_sos()
