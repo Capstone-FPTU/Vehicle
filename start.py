@@ -8,6 +8,7 @@ import json
 import requests
 import getmac
 import time
+import os
 
 
 def connect() -> mqtt:
@@ -47,6 +48,8 @@ def on_message(client, userdata, msg):
         if (msg.topic == "sc-mavr/vehicle/new-order"):
             print("button")
             start_button()
+        if (msg.topic == "sc-mavr/vehicle/shutdown"):
+            os.system('sudo shutdown -h now')
         if (msg.topic == "sc-mavr/vehicle/going-home"):
             for key, value in data["theWay"].items():
                 turn_value = value.upper()
@@ -70,6 +73,7 @@ def start():
     client.subscribe("sc-mavr/vehicle/new-order")
     client.subscribe("sc-mavr/vehicle/open-box")
     client.subscribe("sc-mavr/vehicle/going-home")
+    client.subscribe("sc-mavr/vehicle/shutdown")
     client.on_message = on_message
     client.loop_forever()
 
