@@ -11,6 +11,7 @@ import time
 import argparse
 from common import *
 import requests
+import getmac
 
 enRight = 12
 enLeft = 13
@@ -92,7 +93,9 @@ flag_skip = 0
 sec = 0
 sec_person = 0
 flag_count_parking = 0
-flag_turn_parking = 0            
+flag_turn_parking = 0
+sos_call_api = 0
+time_call_api = 10
 def forward_with_speed(speed):
     runLeft.ChangeDutyCycle(speed)
     runRight.ChangeDutyCycle(speed)
@@ -369,8 +372,9 @@ def turn_180():
             flag_turn_parking = 1
         if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking == 1:
             break
+
 def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
-    global value_detect, villa_name, value_person, flag_skip, sec, flag_sensor_light
+    global value_detect, villa_name, value_person, flag_skip, sec, flag_sensor_light, sos_call_api
     global flag_derection_return_home, flag_turn_sos_p, flag_count_parking, flag_turn_parking
     convert_list = list(list_villa)
     flag_go_out = 0
@@ -395,6 +399,13 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
 #         print(flag_sensor_light)
         # detect distance
         while sensor.distance * 100 < dis and value_person == 0:
+            if sos_call_api == 0:
+                sos_call_api = time.time()
+            if time.time() - sos_call_api >= time_call_api:
+                print("sos call api")
+                requests.get(API_ENDPOINT + URI_SOS + "?vehicle_code=" + code + "&mac_address=" + getmac.get_mac_address())
+                reset()
+                return 0
             stop()
             call_thread_detect_person(frame)
             if value_person > 0:
@@ -411,7 +422,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
         GPIO.output(relayLed, GPIO.LOW)
         if value_detect == "STOP":
             stop()
-#             reset()
+            reset()
             value_detect = ''
             flag_go_out = 0
             flag_skip = 0
@@ -432,13 +443,20 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                 GPIO.output(relayLed,GPIO.HIGH)
                 flag_turn_sos_p = 0
                 stop()
+                if sos_call_api == 0:
+                    sos_call_api = time.time()
                 frame = call_thread_camera()
                 call_thread_detect_villa(frame)
+                if villa_name == "" and time.time() - sos_call_api >= time_call_api:
+                    print("sos call api")
+                    requests.get(API_ENDPOINT + URI_SOS + "?vehicle_code=" + code + "&mac_address=" + getmac.get_mac_address())
+                    reset()
+                    return 0
                 if villa_name != "":
                     villa = "".join(filter(str.isalnum, villa_name))        
                 try:
                     value_detect = list_villa[villa].upper().strip()
-                    requests.get(API_ENDPOINT + URI_TRACKING+"?vehicle_code=" + code + "&villa_name="+villa + "&way="+ fullWay + "&before_node=" + convert_list[convert_list.index(villa) - 1])
+                    requests.get(API_ENDPOINT + URI_TRACKING+"?vehicle_code=" + code + "&villa_name=" + villa + "&way="+ fullWay + "&before_node=" + convert_list[convert_list.index(villa) - 1])
                     #end call
                     villa_name = ''
                     villa = ''
