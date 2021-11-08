@@ -378,6 +378,8 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
         flag_go_out = 1
         
     if value_turning:
+        if value_turning == "FORWARD":
+            value_turning = ''
         value_detect = value_turning
         value_turning = ''
     while True:
