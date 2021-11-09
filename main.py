@@ -2,7 +2,6 @@
 import cv2
 import RPi.GPIO as GPIO
 from gpiozero import DistanceSensor
-import datetime
 import pytesseract
 import concurrent.futures as cf
 import threading
@@ -20,7 +19,7 @@ inRight1 = 17
 inRight2 = 27
 
 inLeft1 = 23
-inLeft2 =  22
+inLeft2 = 22
 
 sensor_1 = 16
 sensor_2 = 20
@@ -31,7 +30,7 @@ sensor_5 = 26
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
 
-# setup pin on PI 
+# setup pin on PI
 GPIO.setup(sensor_1, GPIO.IN)
 GPIO.setup(sensor_2, GPIO.IN)
 GPIO.setup(sensor_3, GPIO.IN)
@@ -96,7 +95,7 @@ flag_count_parking = 0
 flag_turn_parking = 0
 sec_call_api = 0
 time_call_api = 30
-flag_call_api = False
+
 
 def forward_with_speed(speed):
     runLeft.ChangeDutyCycle(speed)
@@ -105,29 +104,39 @@ def forward_with_speed(speed):
     GPIO.output(inRight2, GPIO.HIGH)
     GPIO.output(inLeft1, GPIO.LOW)
     GPIO.output(inLeft2, GPIO.HIGH)
+
+
 def turn_right(turn_value):
     runLeft.ChangeDutyCycle(turn_value)
     GPIO.output(inRight1, GPIO.LOW)
     GPIO.output(inRight2, GPIO.HIGH)
     GPIO.output(inLeft1, GPIO.LOW)
     GPIO.output(inLeft2, GPIO.LOW)
+
+
 def turn_left(turn_value):
-#     runLeft.ChangeDutyCycle(100)
+    #     runLeft.ChangeDutyCycle(100)
     runRight.ChangeDutyCycle(turn_value)
     GPIO.output(inRight1, GPIO.LOW)
     GPIO.output(inRight2, GPIO.LOW)
     GPIO.output(inLeft1, GPIO.LOW)
     GPIO.output(inLeft2, GPIO.HIGH)
+
+
 def turn_right_max():
     GPIO.output(inRight1, GPIO.LOW)
     GPIO.output(inRight2, GPIO.HIGH)
     GPIO.output(inLeft1, GPIO.LOW)
     GPIO.output(inLeft2, GPIO.LOW)
+
+
 def turn_left_max():
     GPIO.output(inRight1, GPIO.LOW)
     GPIO.output(inRight2, GPIO.LOW)
     GPIO.output(inLeft1, GPIO.LOW)
     GPIO.output(inLeft2, GPIO.HIGH)
+
+
 def turn_left_max_sos():
     runLeft.ChangeDutyCycle(speedTurn)
     runRight.ChangeDutyCycle(speedTurn)
@@ -135,6 +144,8 @@ def turn_left_max_sos():
     GPIO.output(inRight2, GPIO.LOW)
     GPIO.output(inLeft1, GPIO.LOW)
     GPIO.output(inLeft2, GPIO.HIGH)
+
+
 def turn_right_max_sos():
     runLeft.ChangeDutyCycle(speedTurn)
     runRight.ChangeDutyCycle(speedTurn)
@@ -142,6 +153,8 @@ def turn_right_max_sos():
     GPIO.output(inRight2, GPIO.HIGH)
     GPIO.output(inLeft1, GPIO.HIGH)
     GPIO.output(inLeft2, GPIO.LOW)
+
+
 def stop():
     GPIO.output(inRight1, GPIO.LOW)
     GPIO.output(inRight2, GPIO.LOW)
@@ -151,13 +164,13 @@ def stop():
 
 def follow_line(sign_1, sign_2, sign_3, sign_4, sign_5):
     global flag_sensor_light
-    if sign_1 == 1 and  sign_2 == 1  and sign_3 == 0 and sign_4 == 1 and sign_5 == 1:
+    if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1:
         flag_sensor_light = "C"
     elif sign_1 == 0 and sign_2 == 0 and sign_3 == 0 and sign_4 == 0 and sign_5 == 0:
         flag_sensor_light = "SOS_P"
     elif sign_1 == 1 and sign_2 == 0 and sign_4 == 1 and sign_5 == 1:
         flag_sensor_light = "L"
-    elif  sign_1 == 0 and sign_3 == 1 and sign_4 == 1 and sign_5 == 1:
+    elif sign_1 == 0 and sign_3 == 1 and sign_4 == 1 and sign_5 == 1:
         flag_sensor_light = "LM"
     elif sign_1 == 1 and sign_2 == 1 and sign_4 == 0 and sign_5 == 1:
         flag_sensor_light = "R"
@@ -165,17 +178,20 @@ def follow_line(sign_1, sign_2, sign_3, sign_4, sign_5):
         flag_sensor_light = "RM"
     elif sign_1 == 0 and sign_2 == 0 and sign_3 == 0 and sign_5 == 1:
         flag_sensor_light = "SOS_L"
-    elif sign_1 == 1 and sign_3 == 0 and sign_4 == 0 and sign_5 == 0 :
+    elif sign_1 == 1 and sign_3 == 0 and sign_4 == 0 and sign_5 == 0:
         flag_sensor_light = "SOS_R"
+
 
 def call_thread_follow_line(sign_1, sign_2, sign_3, sign_4, sign_5):
     x = threading.Thread(target=follow_line, args=(sign_1, sign_2, sign_3, sign_4, sign_5))
     x.start()
     x.join()
 
+
 def open_camera():
     ret, frame = cap.read()
     return frame
+
 
 def call_thread_camera():
     with cf.ThreadPoolExecutor() as executor:
@@ -183,11 +199,12 @@ def call_thread_camera():
         frame = future.result()
         return frame
 
+
 def detect_villa(frame):
     global villa_name
     global flag_detect
     if flag_detect == 0:
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(5, 5))
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
         morphological_img = cv2.morphologyEx(frame, cv2.MORPH_GRADIENT, kernel)
         canny_img = cv2.Canny(morphological_img, 200, 300)
         contours, _ = cv2.findContours(canny_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -201,42 +218,43 @@ def detect_villa(frame):
                 if w > h:
                     ROI = four_point_transform(frame, approx.reshape(4, 2))
                     # resize image
-                    scale_percent = 220 # percent of original size
+                    scale_percent = 220  # percent of original size
                     width = int(ROI.shape[1] * scale_percent / 100)
                     height = int(ROI.shape[0] * scale_percent / 100)
                     dim = (width, height)
-                    resized = cv2.resize(ROI, dim, interpolation = cv2.INTER_AREA)                    
-                    cv2.imwrite("ROI.png",resized)
+                    resized = cv2.resize(ROI, dim, interpolation=cv2.INTER_AREA)
+                    cv2.imwrite("ROI.png", resized)
                     custom_config = r'c tessedit_char_whitelist=HOMELUXTEPYNAIS --psm 6'
                     villa_name = pytesseract.image_to_string(resized, config=custom_config, lang='eng')
                     print("villa:", villa_name)
                     if villa_name != "":
                         break
-                    
+
     else:
         villa_name = ''
+
 
 def call_thread_detect_villa(frame):
     x = threading.Thread(target=detect_villa, args=(frame,))
     x.start()
     x.join()
-    
 
 
 def led_sign():
-    global sign_1, sign_2, sign_3, sign_4, sign_5 
+    global sign_1, sign_2, sign_3, sign_4, sign_5
     sign_1 = GPIO.input(sensor_1)
     sign_2 = GPIO.input(sensor_2)
     sign_3 = GPIO.input(sensor_3)
     sign_4 = GPIO.input(sensor_4)
     sign_5 = GPIO.input(sensor_5)
-    
+
+
 def call_thread_led_sign():
     x = threading.Thread(target=led_sign, args=())
     x.start()
     x.join()
-    
-    
+
+
 def detect_person(frame):
     global value_person
     # detect person
@@ -265,30 +283,33 @@ def detect_person(frame):
         # Neu vuot qua 0.5 threshold
         if confidence > 0.8:
             class_id = int(detections[0, 0, i, 1])
-            if (class_id == 15) :
+            if (class_id == 15):
                 value_person = confidence
                 return
     value_person = 0
+
 
 def call_thread_detect_person(frame):
     x = threading.Thread(target=detect_person, args=(frame,))
     x.start()
     x.join()
 
+
 def call_api(api):
-    x = requests.get(api)
-    
-    
+    requests.get(api)
+
+
 def call_thread_api(api):
     x = threading.Thread(target=call_api, args=(api,))
     x.start()
     x.join()
-    
-#Vehicle_1 go Parking_Left
+
+
+# Vehicle_1 go Parking_Left
 def turn_into_home(turn, code):
     global flag_count_parking, flag_call_api
     if flag_count_parking == 0:
-        flag_turn_parking= 0
+        flag_turn_parking = 0
         while True:
             frame = call_thread_camera()
             forward_with_speed(speed)
@@ -296,12 +317,12 @@ def turn_into_home(turn, code):
             if turn == "RIGHT":
                 turn_right_max_sos()
                 if sign_1 == 0:
-                    flag_turn_parking =1
+                    flag_turn_parking = 1
             else:
                 turn_left_max_sos()
                 if sign_5 == 0:
-                    flag_turn_parking =1
-            if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking ==1:
+                    flag_turn_parking = 1
+            if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking == 1:
                 break
     elif flag_count_parking == 1:
         flag_turn_parking = 0
@@ -311,11 +332,11 @@ def turn_into_home(turn, code):
             call_thread_led_sign()
             if (code == 'VH001'):
                 turn_left_max_sos()
-                if sign_2 == 0 and sign_1 ==1:
+                if sign_2 == 0 and sign_1 == 1:
                     flag_turn_parking = 1
             if (code == 'VH002'):
                 turn_right_max_sos()
-                if sign_4 == 0 and sign_5 ==1:
+                if sign_4 == 0 and sign_5 == 1:
                     flag_turn_parking = 1
             if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking == 1:
                 break
@@ -327,13 +348,14 @@ def turn_into_home(turn, code):
             turn_right_max_sos()
             call_thread_led_sign()
             if sign_1 == 0 and sign_2 == 1:
-                flag_turn_parking =1
+                flag_turn_parking = 1
             if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking == 1:
+                stop()
                 api = API_ENDPOINT + URI_FINISH + "?vehicle_code=" + code
-                if flag_call_api == False:
-                    call_thread_api(api)
-                    flag_call_api = True
+                call_thread_api(api)
                 break
+
+
 def go_out_parking(turn):
     flag_turn_parking = 0
     while True:
@@ -343,16 +365,18 @@ def go_out_parking(turn):
         if turn == "RIGHT":
             turn_right_max_sos()
             if sign_1 == 0:
-                flag_turn_parking =1
+                flag_turn_parking = 1
         elif turn == "LEFT":
             turn_left_max_sos()
             if sign_5 == 0:
                 flag_turn_parking = 1
-        if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking ==1:
-                break
+        if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking == 1:
+            break
+
+
 def reset():
     global flag_prioritize, detect, flag_sensor_light, flag_detect, value_detect, villa_name, value, flag_derection_return_home, flag_call_api
-    global sign_1, sign_2, sign_3, sign_4, sign_5, value_person, flag_turn_sos_p, flag_skip,sec, sec_person, flag_count_parking, flag_turn_parking
+    global sign_1, sign_2, sign_3, sign_4, sign_5, value_person, flag_turn_sos_p, flag_skip, sec, sec_person, flag_count_parking, flag_turn_parking
     flag_prioritize = 0
     detect = None
     flag_sensor_light = "C"
@@ -375,7 +399,8 @@ def reset():
     flag_turn_parking = 0
     GPIO.output(relayLed, GPIO.LOW)
     flag_call_api = False
-    
+
+
 def turn_180():
     flag_turn_parking = 0
     while True:
@@ -388,6 +413,7 @@ def turn_180():
         if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking == 1:
             break
 
+
 def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
     global value_detect, villa_name, value_person, flag_skip, sec, flag_sensor_light, sec_call_api
     global flag_derection_return_home, flag_turn_sos_p, flag_count_parking, flag_turn_parking, flag_call_api
@@ -395,7 +421,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
     flag_go_out = 0
     if home_value == '':
         flag_go_out = 1
-        
+
     if value_turning:
         if value_turning == "FORWARD":
             value_turning = ''
@@ -409,9 +435,9 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
         if isTurning:
             turn_180()
             isTurning = False
-#         cv2.imshow("New Vehicle", frame)
-        
-#         print(flag_sensor_light)
+        #         cv2.imshow("New Vehicle", frame)
+
+        #         print(flag_sensor_light)
         # detect distance
         while sensor.distance * 100 < dis and value_person == 0:
             if sec_call_api == 0:
@@ -419,9 +445,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
             if time.time() - sec_call_api >= time_call_api:
                 print("sos call api")
                 api = API_ENDPOINT + URI_SOS + "?vehicle_code=" + code + "&mac_address=" + getmac.get_mac_address()
-                if flag_call_api == False:
-                    call_thread_api(api)
-                    flag_call_api = True
+                call_thread_api(api)
                 reset()
                 return 0
             stop()
@@ -433,8 +457,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                 print("Obstacle")
                 call_thread_led_sign()
                 call_thread_follow_line(sign_1, sign_2, sign_3, sign_4, sign_5)
-                    
-                    
+
         call_thread_led_sign()
         call_thread_follow_line(sign_1, sign_2, sign_3, sign_4, sign_5)
         GPIO.output(relayLed, GPIO.LOW)
@@ -444,11 +467,9 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
             value_detect = ''
             flag_go_out = 0
             flag_skip = 0
-            
+
             api = API_ENDPOINT + URI_ARRIVED + "?vehicle_code=" + code
-            if flag_call_api == False:
-                call_thread_api(api)
-                flag_call_api = True
+            call_thread_api(api)
             return 0
         if flag_sensor_light == "SOS_P" and flag_derection_return_home != "":
             flag_count_parking = flag_count_parking + 1
@@ -459,14 +480,12 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                 flag_sensor_light = ''
                 flag_derection_return_home = ''
                 flag_count_parking = 0
-                api = API_ENDPOINT + URI_FINISH+"?vehicle_code=" + code
-                if flag_call_api == False:
-                    call_thread_api(api)
-                    flag_call_api = True
+                api = API_ENDPOINT + URI_FINISH + "?vehicle_code=" + code
+                call_thread_api(api)
                 return 0
         if flag_sensor_light == "SOS_P":
             if value_detect == "":
-                GPIO.output(relayLed,GPIO.HIGH)
+                GPIO.output(relayLed, GPIO.HIGH)
                 flag_turn_sos_p = 0
                 stop()
                 if sec_call_api == 0:
@@ -476,20 +495,16 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                 if villa_name == "" and time.time() - sec_call_api >= time_call_api:
                     print("sos call api")
                     api = API_ENDPOINT + URI_SOS + "?vehicle_code=" + code + "&mac_address=" + getmac.get_mac_address()
-                    if flag_call_api == False:
-                        call_thread_api(api)
-                        flag_call_api = True
+                    call_thread_api(api)
                     reset()
                     return 0
                 if villa_name != "":
-                    villa = "".join(filter(str.isalnum, villa_name))        
+                    villa = "".join(filter(str.isalnum, villa_name))
                 try:
                     value_detect = list_villa[villa].upper().strip()
-                    api = API_ENDPOINT + URI_TRACKING+"?vehicle_code=" + code + "&villa_name=" + villa + "&way="+ fullWay + "&before_node=" + convert_list[convert_list.index(villa) - 1]
-                    if flag_call_api == False:
-                        call_thread_api(api)
-                        flag_call_api = True
-                    #end call
+                    api = API_ENDPOINT + URI_TRACKING + "?vehicle_code=" + code + "&villa_name=" + villa + "&way=" + fullWay + "&before_node=" + convert_list[convert_list.index(villa) - 1]
+                    call_thread_api(api)
+                    # end call
                     flag_call_api = False
                     villa_name = ''
                     villa = ''
@@ -501,7 +516,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                     call_thread_follow_line(sign_1, sign_2, sign_3, sign_4, sign_5)
                 except:
                     value_detect = value_detect
-    #         nga tu
+            #         nga tu
             elif value_detect != "" and flag_skip == 1 and time.time() - sec > 1:
                 print('---------------------------------------')
                 sec = time.time()
@@ -535,15 +550,15 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                         if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking == 1:
                             value_detect = ''
                             break
-                    
-                    
-    #     nga ba 
+
+
+        #     nga ba
         else:
             flag_turn_sos_p = 1
             forward_with_speed(speed)
             call_thread_follow_line(sign_1, sign_2, sign_3, sign_4, sign_5)
             # nga ba
-            
+
             if flag_sensor_light == "SOS_L":
                 if flag_go_out == 0:
                     go_out_parking("LEFT")
@@ -606,10 +621,10 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                 turn_left(10)
             elif flag_sensor_light == "LM":
                 turn_left_max()
-        if(key==ord('q')):
+        if (key == ord('q')):
             GPIO.output(relayLed, GPIO.LOW)
             break
-        
+
     GPIO.output(inRight1, GPIO.LOW)
     GPIO.output(inRight2, GPIO.LOW)
     GPIO.output(inLeft1, GPIO.LOW)
