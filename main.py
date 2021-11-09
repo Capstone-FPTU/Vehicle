@@ -94,8 +94,10 @@ sec = 0
 sec_person = 0
 flag_count_parking = 0
 flag_turn_parking = 0
-sos_call_api = 0
-time_call_api = 10
+sec_call_api = 0
+time_call_api = 30
+flag_call_api = False
+
 def forward_with_speed(speed):
     runLeft.ChangeDutyCycle(speed)
     runRight.ChangeDutyCycle(speed)
@@ -273,9 +275,18 @@ def call_thread_detect_person(frame):
     x.start()
     x.join()
 
+def call_api(api):
+    x = requests.get(api)
+    
+    
+def call_thread_api(api):
+    x = threading.Thread(target=call_api, args=(api,))
+    x.start()
+    x.join()
+    
 #Vehicle_1 go Parking_Left
 def turn_into_home(turn, code):
-    global flag_count_parking
+    global flag_count_parking, flag_call_api
     if flag_count_parking == 0:
         flag_turn_parking= 0
         while True:
@@ -318,7 +329,10 @@ def turn_into_home(turn, code):
             if sign_1 == 0 and sign_2 == 1:
                 flag_turn_parking =1
             if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking == 1:
-                requests.get(API_ENDPOINT + URI_FINISH + "?vehicle_code=" + code)
+                api = API_ENDPOINT + URI_FINISH + "?vehicle_code=" + code
+                if flag_call_api == False:
+                    call_thread_api(api)
+                    flag_call_api = True
                 break
 def go_out_parking(turn):
     flag_turn_parking = 0
@@ -337,11 +351,10 @@ def go_out_parking(turn):
         if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking ==1:
                 break
 def reset():
-    global flag_prioritize, detect, net, flag_sensor_light, flag_detect, value_detect, villa_name, value, flag_derection_return_home
+    global flag_prioritize, detect, flag_sensor_light, flag_detect, value_detect, villa_name, value, flag_derection_return_home, flag_call_api
     global sign_1, sign_2, sign_3, sign_4, sign_5, value_person, flag_turn_sos_p, flag_skip,sec, sec_person, flag_count_parking, flag_turn_parking
     flag_prioritize = 0
     detect = None
-    net = ''
     flag_sensor_light = "C"
     flag_detect = 0
     value_detect = ''
@@ -360,7 +373,9 @@ def reset():
     sec_person = 0
     flag_count_parking = 0
     flag_turn_parking = 0
-
+    GPIO.output(relayLed, GPIO.LOW)
+    flag_call_api = False
+    
 def turn_180():
     flag_turn_parking = 0
     while True:
@@ -374,8 +389,8 @@ def turn_180():
             break
 
 def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
-    global value_detect, villa_name, value_person, flag_skip, sec, flag_sensor_light, sos_call_api
-    global flag_derection_return_home, flag_turn_sos_p, flag_count_parking, flag_turn_parking
+    global value_detect, villa_name, value_person, flag_skip, sec, flag_sensor_light, sec_call_api
+    global flag_derection_return_home, flag_turn_sos_p, flag_count_parking, flag_turn_parking, flag_call_api
     convert_list = list(list_villa)
     flag_go_out = 0
     if home_value == '':
@@ -399,11 +414,14 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
 #         print(flag_sensor_light)
         # detect distance
         while sensor.distance * 100 < dis and value_person == 0:
-            if sos_call_api == 0:
-                sos_call_api = time.time()
-            if time.time() - sos_call_api >= time_call_api:
+            if sec_call_api == 0:
+                sec_call_api = time.time()
+            if time.time() - sec_call_api >= time_call_api:
                 print("sos call api")
-                requests.get(API_ENDPOINT + URI_SOS + "?vehicle_code=" + code + "&mac_address=" + getmac.get_mac_address())
+                api = API_ENDPOINT + URI_SOS + "?vehicle_code=" + code + "&mac_address=" + getmac.get_mac_address()
+                if flag_call_api == False:
+                    call_thread_api(api)
+                    flag_call_api = True
                 reset()
                 return 0
             stop()
@@ -426,44 +444,60 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
             value_detect = ''
             flag_go_out = 0
             flag_skip = 0
-            requests.get(API_ENDPOINT + URI_ARRIVED + "?vehicle_code=" + code)
+            
+            api = API_ENDPOINT + URI_ARRIVED + "?vehicle_code=" + code
+            if flag_call_api == False:
+                call_thread_api(api)
+                flag_call_api = True
             return 0
         if flag_sensor_light == "SOS_P" and flag_derection_return_home != "":
             flag_count_parking = flag_count_parking + 1
             turn_into_home(flag_derection_return_home, code)
             if flag_count_parking == 2:
                 stop()
+                reset()
                 flag_sensor_light = ''
                 flag_derection_return_home = ''
                 flag_count_parking = 0
-                requests.get(API_ENDPOINT + URI_FINISH+"?vehicle_code=" + code)
+                api = API_ENDPOINT + URI_FINISH+"?vehicle_code=" + code
+                if flag_call_api == False:
+                    call_thread_api(api)
+                    flag_call_api = True
                 return 0
         if flag_sensor_light == "SOS_P":
             if value_detect == "":
                 GPIO.output(relayLed,GPIO.HIGH)
                 flag_turn_sos_p = 0
                 stop()
-                if sos_call_api == 0:
-                    sos_call_api = time.time()
+                if sec_call_api == 0:
+                    sec_call_api = time.time()
                 frame = call_thread_camera()
                 call_thread_detect_villa(frame)
-                if villa_name == "" and time.time() - sos_call_api >= time_call_api:
+                if villa_name == "" and time.time() - sec_call_api >= time_call_api:
                     print("sos call api")
-                    requests.get(API_ENDPOINT + URI_SOS + "?vehicle_code=" + code + "&mac_address=" + getmac.get_mac_address())
+                    api = API_ENDPOINT + URI_SOS + "?vehicle_code=" + code + "&mac_address=" + getmac.get_mac_address()
+                    if flag_call_api == False:
+                        call_thread_api(api)
+                        flag_call_api = True
                     reset()
                     return 0
                 if villa_name != "":
                     villa = "".join(filter(str.isalnum, villa_name))        
                 try:
                     value_detect = list_villa[villa].upper().strip()
-                    requests.get(API_ENDPOINT + URI_TRACKING+"?vehicle_code=" + code + "&villa_name=" + villa + "&way="+ fullWay + "&before_node=" + convert_list[convert_list.index(villa) - 1])
+                    api = API_ENDPOINT + URI_TRACKING+"?vehicle_code=" + code + "&villa_name=" + villa + "&way="+ fullWay + "&before_node=" + convert_list[convert_list.index(villa) - 1]
+                    if flag_call_api == False:
+                        call_thread_api(api)
+                        flag_call_api = True
                     #end call
+                    flag_call_api = False
                     villa_name = ''
                     villa = ''
                     flag_detect = 1
                     flag_skip = 1
                     sec = time.time()
                     forward_with_speed(speed)
+                    sec_call_api = 0
                     call_thread_follow_line(sign_1, sign_2, sign_3, sign_4, sign_5)
                 except:
                     value_detect = value_detect

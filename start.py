@@ -64,7 +64,10 @@ def on_message(client, userdata, msg):
                     oldWay.append(key)
                 requests.get(API_ENDPOINT + URI_GO_TO_HOME + "?vehicle_code=" + CODE + "&before_node=" + oldWay[
                     len(oldWay) - 2] + "&start_node=" + oldWay[len(oldWay) - 1])
-
+        if (msg.topic == "sc-mavr/vehicle/open-box-sos"):
+            print('open box sos')
+            open_box()
+            
 
 def start():
     client = connect()
@@ -74,6 +77,7 @@ def start():
     client.subscribe("sc-mavr/vehicle/open-box")
     client.subscribe("sc-mavr/vehicle/going-home")
     client.subscribe("sc-mavr/vehicle/shutdown")
+    client.subscribe("sc-mavr/vehicle/open-box-sos")
     client.on_message = on_message
     client.loop_forever()
 
