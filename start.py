@@ -14,12 +14,20 @@ import os
 
 def connect() -> mqtt:
     def on_connect(client, userdata, flags, rc):
+        
         if rc == 0:
             mac_address = getmac.get_mac_address()
             print(mac_address)
             print(USERNAME + " Connected successfully")
             x = requests.get(API_ENDPOINT + URI_SEND_NOTI + "?vehicle_code=" + CODE + "&mac_address=" + mac_address)
             print(x.status_code)
+            client.subscribe("sc-mavr/vehicle/check-connect")
+            client.subscribe("sc-mavr/vehicle/order")
+            client.subscribe("sc-mavr/vehicle/new-order")
+            client.subscribe("sc-mavr/vehicle/open-box")
+            client.subscribe("sc-mavr/vehicle/going-home")
+            client.subscribe("sc-mavr/vehicle/shutdown")
+            client.subscribe("sc-mavr/vehicle/open-box-sos")
         else:
             print("Failed to connect, return code %d\n", rc)
 

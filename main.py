@@ -438,7 +438,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
             if sec_call_api == 0:
                 sec_call_api = time.time()
             if time.time() - sec_call_api >= time_call_api:
-                print("sos call api")
+                print("sos call api detect")
                 api = API_ENDPOINT + URI_SOS + "?vehicle_code=" + code + "&mac_address=" + getmac.get_mac_address()
                 call_api(api)
                 reset()
