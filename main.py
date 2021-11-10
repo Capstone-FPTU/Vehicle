@@ -11,7 +11,7 @@ import argparse
 from common import *
 import requests
 import getmac
-
+from play_music import music
 enRight = 12
 enLeft = 13
 
@@ -296,13 +296,8 @@ def call_thread_detect_person(frame):
 
 
 def call_api(api):
-    requests.get(api)
-
-
-def call_thread_api(api):
-    x = threading.Thread(target=call_api, args=(api,))
-    x.start()
-    x.join()
+    x = requests.get(api)
+    print(x.status_code)
 
 
 # Vehicle_1 go Parking_Left
@@ -352,7 +347,7 @@ def turn_into_home(turn, code):
             if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking == 1:
                 stop()
                 api = API_ENDPOINT + URI_FINISH + "?vehicle_code=" + code
-                call_thread_api(api)
+                call_api(api)
                 break
 
 
@@ -445,7 +440,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
             if time.time() - sec_call_api >= time_call_api:
                 print("sos call api")
                 api = API_ENDPOINT + URI_SOS + "?vehicle_code=" + code + "&mac_address=" + getmac.get_mac_address()
-                call_thread_api(api)
+                call_api(api)
                 reset()
                 return 0
             stop()
@@ -469,7 +464,9 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
             flag_skip = 0
 
             api = API_ENDPOINT + URI_ARRIVED + "?vehicle_code=" + code
-            call_thread_api(api)
+            call_api(api)
+#             music("hello.wav")
+            list_villa= ''
             return 0
         if flag_sensor_light == "SOS_P" and flag_derection_return_home != "":
             flag_count_parking = flag_count_parking + 1
@@ -481,7 +478,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                 flag_derection_return_home = ''
                 flag_count_parking = 0
                 api = API_ENDPOINT + URI_FINISH + "?vehicle_code=" + code
-                call_thread_api(api)
+                call_api(api)
                 return 0
         if flag_sensor_light == "SOS_P":
             if value_detect == "":
@@ -495,7 +492,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                 if villa_name == "" and time.time() - sec_call_api >= time_call_api:
                     print("sos call api")
                     api = API_ENDPOINT + URI_SOS + "?vehicle_code=" + code + "&mac_address=" + getmac.get_mac_address()
-                    call_thread_api(api)
+                    call_api(api)
                     reset()
                     return 0
                 if villa_name != "":
@@ -503,7 +500,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                 try:
                     value_detect = list_villa[villa].upper().strip()
                     api = API_ENDPOINT + URI_TRACKING + "?vehicle_code=" + code + "&villa_name=" + villa + "&way=" + fullWay + "&before_node=" + convert_list[convert_list.index(villa) - 1]
-                    call_thread_api(api)
+                    call_api(api)
                     # end call
                     flag_call_api = False
                     villa_name = ''
@@ -572,7 +569,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                     if value_detect == "PARKING" and flag_derection_return_home == "" and flag_skip == 0 and time.time() - sec > 1:
                         flag_derection_return_home = "LEFT"
                         turn_into_home(flag_derection_return_home, code)
-                    if value_detect == "FORWARD":
+                    if value_detect == "FORWARD" and time.time() - sec > 1:
                         forward_with_speed(speed)
                         value_detect = ''
                         flag_turn_sos_p = 0
@@ -598,7 +595,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                     if value_detect == "PARKING" and flag_derection_return_home == "" and flag_skip == 0 and time.time() - sec > 1:
                         flag_derection_return_home = "RIGHT"
                         turn_into_home(flag_derection_return_home, code)
-                    if value_detect == "FORWARD":
+                    if value_detect == "FORWARD" and time.time() - sec > 1:
                         forward_with_speed(speed)
                         value_detect = ''
                         flag_turn_sos_p = 0

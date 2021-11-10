@@ -4,6 +4,7 @@ from main import run
 from button_start_vehicle import start_button
 from urllib.request import urlopen
 from scan_qr import open_box
+from play_music import music
 import json
 import requests
 import getmac
@@ -46,6 +47,8 @@ def on_message(client, userdata, msg):
                     turn_value = value.upper()
             run(theWay, turn_value, CODE, data["turning"], '', data["fullWay"])
         if (msg.topic == "sc-mavr/vehicle/new-order"):
+            print("Open box new order")
+            open_box()
             print("button")
             start_button()
         if (msg.topic == "sc-mavr/vehicle/shutdown"):
@@ -59,6 +62,7 @@ def on_message(client, userdata, msg):
             print('open box')
             value = open_box()
             if value == True:
+#                 music("thank-you.wav")
                 oldWay = []
                 for key, _ in theWay.items():
                     oldWay.append(key)
