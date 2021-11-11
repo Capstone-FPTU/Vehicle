@@ -11,7 +11,7 @@ import argparse
 from common import *
 import requests
 import getmac
-from play_music import music
+# from play_music import music
 enRight = 12
 enLeft = 13
 
@@ -63,7 +63,7 @@ GPIO.output(relay, GPIO.LOW)
 GPIO.output(relayLed, GPIO.LOW)
 frequency = 1000
 speed = 100
-speedTurn = 90
+speedTurn = 80
 runLeft = GPIO.PWM(enLeft, frequency)
 runRight = GPIO.PWM(enRight, frequency)
 runLeft.start(speed)
@@ -154,6 +154,22 @@ def turn_right_max_sos():
     GPIO.output(inLeft1, GPIO.HIGH)
     GPIO.output(inLeft2, GPIO.LOW)
 
+def turn_left_max_parking():
+    runLeft.ChangeDutyCycle(speedTurn + 10)
+    runRight.ChangeDutyCycle(speedTurn)
+    GPIO.output(inRight1, GPIO.HIGH)
+    GPIO.output(inRight2, GPIO.LOW)
+    GPIO.output(inLeft1, GPIO.LOW)
+    GPIO.output(inLeft2, GPIO.HIGH)
+
+
+def turn_right_max_parking():
+    runLeft.ChangeDutyCycle(speedTurn)
+    runRight.ChangeDutyCycle(speedTurn + 10)
+    GPIO.output(inRight1, GPIO.LOW)
+    GPIO.output(inRight2, GPIO.HIGH)
+    GPIO.output(inLeft1, GPIO.HIGH)
+    GPIO.output(inLeft2, GPIO.LOW)
 
 def stop():
     GPIO.output(inRight1, GPIO.LOW)
@@ -256,7 +272,7 @@ def call_thread_led_sign():
 
 
 def detect_person(frame):
-    global value_person
+    global value_person, net
     # detect person
     parser = argparse.ArgumentParser(description='Use MobileNet SSD on Pi for object detection')
     parser.add_argument("--prototxt", default="MobileNetSSD_deploy.prototxt")
@@ -310,11 +326,11 @@ def turn_into_home(turn, code):
             forward_with_speed(speed)
             call_thread_led_sign()
             if turn == "RIGHT":
-                turn_right_max_sos()
+                turn_right_max_parking()
                 if sign_1 == 0:
                     flag_turn_parking = 1
             else:
-                turn_left_max_sos()
+                turn_left_max_parking()
                 if sign_5 == 0:
                     flag_turn_parking = 1
             if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking == 1:
@@ -326,11 +342,11 @@ def turn_into_home(turn, code):
             forward_with_speed(speed)
             call_thread_led_sign()
             if (code == 'VH001'):
-                turn_left_max_sos()
+                turn_left_max_parking()
                 if sign_2 == 0 and sign_1 == 1:
                     flag_turn_parking = 1
             if (code == 'VH002'):
-                turn_right_max_sos()
+                turn_right_max_parking()
                 if sign_4 == 0 and sign_5 == 1:
                     flag_turn_parking = 1
             if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking == 1:
@@ -347,7 +363,7 @@ def turn_into_home(turn, code):
             if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking == 1:
                 stop()
                 api = API_ENDPOINT + URI_FINISH + "?vehicle_code=" + code
-                call_api(api)
+                requests.get(api)
                 break
 
 
@@ -440,7 +456,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
             if time.time() - sec_call_api >= time_call_api:
                 print("sos call api detect")
                 api = API_ENDPOINT + URI_SOS + "?vehicle_code=" + code + "&mac_address=" + getmac.get_mac_address()
-                call_api(api)
+                requests.get(api)
                 reset()
                 return 0
             stop()
@@ -464,7 +480,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
             flag_skip = 0
 
             api = API_ENDPOINT + URI_ARRIVED + "?vehicle_code=" + code
-            call_api(api)
+            requests.get(api)
 #             music("hello.wav")
             list_villa= ''
             return 0
@@ -478,7 +494,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                 flag_derection_return_home = ''
                 flag_count_parking = 0
                 api = API_ENDPOINT + URI_FINISH + "?vehicle_code=" + code
-                call_api(api)
+                requests.get(api)
                 return 0
         if flag_sensor_light == "SOS_P":
             if value_detect == "":
@@ -492,15 +508,16 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                 if villa_name == "" and time.time() - sec_call_api >= time_call_api:
                     print("sos call api")
                     api = API_ENDPOINT + URI_SOS + "?vehicle_code=" + code + "&mac_address=" + getmac.get_mac_address()
-                    call_api(api)
+                    requests.get(api)
                     reset()
                     return 0
                 if villa_name != "":
                     villa = "".join(filter(str.isalnum, villa_name))
                 try:
                     value_detect = list_villa[villa].upper().strip()
+                    GPIO.output(relayLed, GPIO.LOW)
                     api = API_ENDPOINT + URI_TRACKING + "?vehicle_code=" + code + "&villa_name=" + villa + "&way=" + fullWay + "&before_node=" + convert_list[convert_list.index(villa) - 1]
-                    call_api(api)
+                    requests.get(api)
                     # end call
                     flag_call_api = False
                     villa_name = ''
@@ -551,6 +568,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
 
         #     nga ba
         else:
+            sec_call_api = 0
             flag_turn_sos_p = 1
             forward_with_speed(speed)
             call_thread_follow_line(sign_1, sign_2, sign_3, sign_4, sign_5)

@@ -4,7 +4,7 @@ from main import run
 from button_start_vehicle import start_button
 from urllib.request import urlopen
 from scan_qr import open_box
-from play_music import music
+# from play_music import music
 import json
 import requests
 import getmac
