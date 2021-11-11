@@ -155,7 +155,7 @@ def turn_right_max_sos():
     GPIO.output(inLeft2, GPIO.LOW)
 
 def turn_left_max_parking():
-    runLeft.ChangeDutyCycle(speedTurn + 10)
+    runLeft.ChangeDutyCycle(speedTurn + 5)
     runRight.ChangeDutyCycle(speedTurn)
     GPIO.output(inRight1, GPIO.HIGH)
     GPIO.output(inRight2, GPIO.LOW)
@@ -165,7 +165,7 @@ def turn_left_max_parking():
 
 def turn_right_max_parking():
     runLeft.ChangeDutyCycle(speedTurn)
-    runRight.ChangeDutyCycle(speedTurn + 10)
+    runRight.ChangeDutyCycle(speedTurn + 5)
     GPIO.output(inRight1, GPIO.LOW)
     GPIO.output(inRight2, GPIO.HIGH)
     GPIO.output(inLeft1, GPIO.HIGH)
@@ -343,11 +343,11 @@ def turn_into_home(turn, code):
             call_thread_led_sign()
             if (code == 'VH001'):
                 turn_left_max_parking()
-                if sign_2 == 0 and sign_1 == 1:
+                if sign_5 == 0:
                     flag_turn_parking = 1
             if (code == 'VH002'):
                 turn_right_max_parking()
-                if sign_4 == 0 and sign_5 == 1:
+                if sign_1 == 0:
                     flag_turn_parking = 1
             if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking == 1:
                 break
@@ -358,7 +358,7 @@ def turn_into_home(turn, code):
             forward_with_speed(speed)
             turn_right_max_sos()
             call_thread_led_sign()
-            if sign_1 == 0 and sign_2 == 1:
+            if sign_5 == 0:
                 flag_turn_parking = 1
             if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking == 1:
                 stop()
@@ -448,7 +448,18 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
             isTurning = False
         #         cv2.imshow("New Vehicle", frame)
 
-        #         print(flag_sensor_light)
+        if value_detect == "STOP":
+            stop()
+            reset()
+            value_detect = ''
+            flag_go_out = 0
+            flag_skip = 0
+
+            api = API_ENDPOINT + URI_ARRIVED + "?vehicle_code=" + code
+            requests.get(api)
+#             music("hello.wav")
+            list_villa= ''
+            return 0
         # detect distance
         while sensor.distance * 100 < dis and value_person == 0:
             if sec_call_api == 0:
@@ -472,18 +483,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
         call_thread_led_sign()
         call_thread_follow_line(sign_1, sign_2, sign_3, sign_4, sign_5)
         GPIO.output(relayLed, GPIO.LOW)
-        if value_detect == "STOP":
-            stop()
-            reset()
-            value_detect = ''
-            flag_go_out = 0
-            flag_skip = 0
-
-            api = API_ENDPOINT + URI_ARRIVED + "?vehicle_code=" + code
-            requests.get(api)
-#             music("hello.wav")
-            list_villa= ''
-            return 0
+        
         if flag_sensor_light == "SOS_P" and flag_derection_return_home != "":
             flag_count_parking = flag_count_parking + 1
             turn_into_home(flag_derection_return_home, code)
@@ -493,8 +493,6 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                 flag_sensor_light = ''
                 flag_derection_return_home = ''
                 flag_count_parking = 0
-                api = API_ENDPOINT + URI_FINISH + "?vehicle_code=" + code
-                requests.get(api)
                 return 0
         if flag_sensor_light == "SOS_P":
             if value_detect == "":
