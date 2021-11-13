@@ -424,7 +424,11 @@ def turn_180():
         if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking == 1:
             break
 
-
+def upload_image_sos():
+    files = {'media': open('ROI.png', 'rb')}
+    api = API_ENDPOINT + URI_SOS + "?vehicle_code=" + code + "&mac_address=" + getmac.get_mac_address()
+    requests.post(url, files=files)
+    
 def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
     global value_detect, villa_name, value_person, flag_skip, sec, flag_sensor_light, sec_call_api
     global flag_derection_return_home, flag_turn_sos_p, flag_count_parking, flag_turn_parking, flag_call_api
@@ -466,8 +470,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                 sec_call_api = time.time()
             if time.time() - sec_call_api >= time_call_api:
                 print("sos call api detect")
-                api = API_ENDPOINT + URI_SOS + "?vehicle_code=" + code + "&mac_address=" + getmac.get_mac_address()
-                requests.get(api)
+                upload_image_sos()
                 reset()
                 return 0
             stop()
@@ -505,8 +508,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                 call_thread_detect_villa(frame)
                 if villa_name == "" and time.time() - sec_call_api >= time_call_api:
                     print("sos call api")
-                    api = API_ENDPOINT + URI_SOS + "?vehicle_code=" + code + "&mac_address=" + getmac.get_mac_address()
-                    requests.get(api)
+                    upload_image_sos()
                     reset()
                     return 0
                 if villa_name != "":
