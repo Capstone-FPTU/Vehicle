@@ -10,7 +10,7 @@ PORT = 8883
 
 # URL call API
 # API_ENDPOINT = "http://localhost:8080"
-API_ENDPOINT = "http://scmavrapi-env.eba-zkmkumcj.ap-southeast-1.elasticbeanstalk.com"
+API_ENDPOINT = "http://scmavrapi-env-1.eba-j94m2upm.ap-southeast-1.elasticbeanstalk.com"
 
 URI_SEND_NOTI = "/api/vehicle/login"
 URI_START_DELIVERY = "/api/vehicle/start-delivery-order"
