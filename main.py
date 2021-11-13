@@ -426,7 +426,7 @@ def turn_180():
         if sign_1 == 1 and sign_2 == 1 and sign_3 == 0 and sign_4 == 1 and sign_5 == 1 and flag_turn_parking == 1:
             break
 
-def upload_image_sos():
+def upload_image_sos(code):
     files = {'media': open('ROI.png', 'rb')}
     api = API_ENDPOINT + URI_SOS + "?vehicle_code=" + code + "&mac_address=" + getmac.get_mac_address()
     requests.post(url, files=files)
@@ -472,7 +472,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                 sec_call_api = time.time()
             if time.time() - sec_call_api >= time_call_api:
                 print("sos call api detect")
-                upload_image_sos()
+                upload_image_sos(code)
                 reset()
                 return 0
             stop()
@@ -501,7 +501,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                 return 0
         if flag_sensor_light == "SOS_P":
             if value_detect == "":
-                if datetime.datetime.now().hour >= 18:
+                if datetime.datetime.now().hour >= 17:
                     GPIO.output(relayLed, GPIO.HIGH)
                 flag_turn_sos_p = 0
                 stop()
@@ -511,7 +511,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                 call_thread_detect_villa(frame)
                 if villa_name == "" and time.time() - sec_call_api >= time_call_api:
                     print("sos call api")
-                    upload_image_sos()
+                    upload_image_sos(code)
                     reset()
                     return 0
                 if villa_name != "":
