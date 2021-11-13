@@ -11,6 +11,8 @@ import argparse
 from common import *
 import requests
 import getmac
+import datetime
+
 # from play_music import music
 enRight = 12
 enLeft = 13
@@ -499,7 +501,8 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                 return 0
         if flag_sensor_light == "SOS_P":
             if value_detect == "":
-                GPIO.output(relayLed, GPIO.HIGH)
+                if datetime.datetime.now().hour >= 18:
+                    GPIO.output(relayLed, GPIO.HIGH)
                 flag_turn_sos_p = 0
                 stop()
                 if sec_call_api == 0:
