@@ -1,17 +1,18 @@
 #!/usr/bin/python
 import cv2
 import RPi.GPIO as GPIO
-from gpiozero import DistanceSensor
 import pytesseract
 import concurrent.futures as cf
 import threading
-from imutils.perspective import four_point_transform
 import time
 import argparse
-from common import *
 import requests
 import getmac
 import datetime
+import multiprocessing
+from gpiozero import DistanceSensor
+from imutils.perspective import four_point_transform
+from common import *
 
 # from play_music import music
 enRight = 12
@@ -97,7 +98,7 @@ flag_count_parking = 0
 flag_turn_parking = 0
 sec_call_api = 0
 time_call_api = 30
-
+string_api = ''
 
 def forward_with_speed(speed):
     runLeft.ChangeDutyCycle(speed)
@@ -312,12 +313,6 @@ def call_thread_detect_person(frame):
     x.start()
     x.join()
 
-
-def call_api(api):
-    x = requests.get(api)
-    print(x.status_code)
-
-
 # Vehicle_1 go Parking_Left
 def turn_into_home(turn, code):
     global flag_count_parking, flag_call_api
@@ -427,9 +422,18 @@ def turn_180():
             break
 
 def upload_image_sos(code):
-    files = {'media': open('ROI.png', 'rb')}
+    files = {'files': open('image.jpg', 'rb')}
     api = API_ENDPOINT + URI_SOS + "?vehicle_code=" + code + "&mac_address=" + getmac.get_mac_address()
-    requests.post(url, files=files)
+    x = requests.post(api, files=files)
+    print(x.status_code)
+
+def call_api(data):
+    x = requests.get(data)
+    print(x.status_code)
+    
+def call_api_process(data):
+    p1 = multiprocessing.Process(target=call_api, args=(data,))
+    p1.start()
     
 def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
     global value_detect, villa_name, value_person, flag_skip, sec, flag_sensor_light, sec_call_api
@@ -462,6 +466,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
             flag_skip = 0
 
             api = API_ENDPOINT + URI_ARRIVED + "?vehicle_code=" + code
+            call_api_process(api)
             requests.get(api)
 #             music("hello.wav")
             list_villa= ''
@@ -520,7 +525,8 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                     value_detect = list_villa[villa].upper().strip()
                     GPIO.output(relayLed, GPIO.LOW)
                     api = API_ENDPOINT + URI_TRACKING + "?vehicle_code=" + code + "&villa_name=" + villa + "&way=" + fullWay + "&before_node=" + convert_list[convert_list.index(villa) - 1]
-                    requests.get(api)
+                    call_api_process(api)
+#                     requests.get(api)
                     # end call
                     flag_call_api = False
                     villa_name = ''
