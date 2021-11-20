@@ -506,8 +506,9 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                 return 0
         if flag_sensor_light == "SOS_P":
             if value_detect == "":
-                if datetime.datetime.now().hour >= 17:
-                    GPIO.output(relayLed, GPIO.HIGH)
+#                 if datetime.datetime.now().hour >= 17:
+#                     GPIO.output(relayLed, GPIO.HIGH)
+                GPIO.output(relayLed, GPIO.HIGH)
                 flag_turn_sos_p = 0
                 stop()
                 if sec_call_api == 0:
@@ -522,8 +523,8 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                 if villa_name != "":
                     villa = "".join(filter(str.isalnum, villa_name))
                 try:
-                    value_detect = list_villa[villa].upper().strip()
                     GPIO.output(relayLed, GPIO.LOW)
+                    value_detect = list_villa[villa].upper().strip()
                     api = API_ENDPOINT + URI_TRACKING + "?vehicle_code=" + code + "&villa_name=" + villa + "&way=" + fullWay + "&before_node=" + convert_list[convert_list.index(villa) - 1]
                     call_api_process(api)
 #                     requests.get(api)
