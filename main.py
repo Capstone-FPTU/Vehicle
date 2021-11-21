@@ -523,8 +523,8 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                 if villa_name != "":
                     villa = "".join(filter(str.isalnum, villa_name))
                 try:
-                    GPIO.output(relayLed, GPIO.LOW)
                     value_detect = list_villa[villa].upper().strip()
+                    GPIO.output(relayLed, GPIO.LOW)
                     api = API_ENDPOINT + URI_TRACKING + "?vehicle_code=" + code + "&villa_name=" + villa + "&way=" + fullWay + "&before_node=" + convert_list[convert_list.index(villa) - 1]
                     call_api_process(api)
 #                     requests.get(api)
@@ -540,6 +540,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                     call_thread_follow_line(sign_1, sign_2, sign_3, sign_4, sign_5)
                 except:
                     value_detect = value_detect
+                    GPIO.output(relayLed, GPIO.LOW)
             #         nga tu
             elif value_detect != "" and flag_skip == 1 and time.time() - sec > 1:
                 print('---------------------------------------')
