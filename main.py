@@ -540,7 +540,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                     call_thread_follow_line(sign_1, sign_2, sign_3, sign_4, sign_5)
                 except:
                     value_detect = value_detect
-                    GPIO.output(relayLed, GPIO.LOW)
+                    # GPIO.output(relayLed, GPIO.LOW)
             #         nga tu
             elif value_detect != "" and flag_skip == 1 and time.time() - sec > 1:
                 print('---------------------------------------')
