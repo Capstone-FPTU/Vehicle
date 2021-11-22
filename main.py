@@ -13,6 +13,7 @@ import multiprocessing
 from gpiozero import DistanceSensor
 from imutils.perspective import four_point_transform
 from common import *
+from os.path import dirname, join
 
 # from play_music import music
 enRight = 12
@@ -54,7 +55,7 @@ GPIO.output(inRight2, GPIO.LOW)
 GPIO.output(inLeft1, GPIO.LOW)
 GPIO.output(inLeft2, GPIO.LOW)
 
-dis = 20
+dis = 40
 # roley
 relay = 3
 relayLed = 5
@@ -277,9 +278,11 @@ def call_thread_led_sign():
 def detect_person(frame):
     global value_person, net
     # detect person
+    protoPath = join(dirname(__file__), "MobileNetSSD_deploy.prototxt")
+    modelPath = join(dirname(__file__), "MobileNetSSD_deploy.caffemodel")
     parser = argparse.ArgumentParser(description='Use MobileNet SSD on Pi for object detection')
-    parser.add_argument("--prototxt", default="MobileNetSSD_deploy.prototxt")
-    parser.add_argument("--weights", default="MobileNetSSD_deploy.caffemodel")
+    parser.add_argument("--prototxt", default=protoPath)
+    parser.add_argument("--weights", default=modelPath)
     argsPer = parser.parse_args()
 
     net = cv2.dnn.readNetFromCaffe(argsPer.prototxt, argsPer.weights)
