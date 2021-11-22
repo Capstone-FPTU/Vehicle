@@ -456,7 +456,6 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
         if isTurning:
             turn_180()
             isTurning = False
-        #         cv2.imshow("New Vehicle", frame)
 
         if value_detect == "STOP":
             stop()
@@ -464,9 +463,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
             value_detect = ''
             flag_go_out = 0
             flag_skip = 0
-
             api = API_ENDPOINT + URI_ARRIVED + "?vehicle_code=" + code
-            call_api_process(api)
             requests.get(api)
 #             music("hello.wav")
             list_villa= ''
@@ -506,8 +503,6 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                 return 0
         if flag_sensor_light == "SOS_P":
             if value_detect == "":
-#                 if datetime.datetime.now().hour >= 17:
-#                     GPIO.output(relayLed, GPIO.HIGH)
                 GPIO.output(relayLed, GPIO.HIGH)
                 flag_turn_sos_p = 0
                 stop()
