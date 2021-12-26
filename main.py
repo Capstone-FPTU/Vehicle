@@ -55,7 +55,7 @@ GPIO.output(inRight2, GPIO.LOW)
 GPIO.output(inLeft1, GPIO.LOW)
 GPIO.output(inLeft2, GPIO.LOW)
 
-dis = 40
+dis = 20
 # roley
 relay = 3
 relayLed = 5
@@ -447,8 +447,9 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
         flag_go_out = 1
 
     if value_turning:
-        if value_turning == "FORWARD":
-            value_turning = ''
+        flag_skip = 1
+        flag_turn_sos_p = 1
+        sec = time.time()
         value_detect = value_turning
         value_turning = ''
     while True:
