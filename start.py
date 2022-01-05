@@ -80,7 +80,6 @@ def on_message(client, userdata, msg):
         if (msg.topic == "sc-mavr/vehicle/open-box-sos"):
             print('open box sos')
             open_box()
-        print(label)    
 
 def start():
     client = connect()

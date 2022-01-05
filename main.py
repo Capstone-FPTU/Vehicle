@@ -445,10 +445,6 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
     flag_go_out = 0
     
     way = fullWay.replace(convert_list[len(convert_list) - 1] + ",","")
-    
-    print(fullWay)
-    print(way)
-    
     if home_value == '':
         flag_go_out = 1
 
