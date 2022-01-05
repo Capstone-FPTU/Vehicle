@@ -12,6 +12,7 @@ import time
 import os
 
 
+
 def connect() -> mqtt:
     def on_connect(client, userdata, flags, rc):
         
@@ -40,7 +41,7 @@ def connect() -> mqtt:
 
 
 theWay = ''
-
+print(theWay)
 
 def on_message(client, userdata, msg):
     global theWay
@@ -79,7 +80,7 @@ def on_message(client, userdata, msg):
         if (msg.topic == "sc-mavr/vehicle/open-box-sos"):
             print('open box sos')
             open_box()
-            
+        print(label)    
 
 def start():
     client = connect()

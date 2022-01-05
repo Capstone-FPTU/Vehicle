@@ -443,15 +443,33 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
     global flag_derection_return_home, flag_turn_sos_p, flag_count_parking, flag_turn_parking, flag_call_api
     convert_list = list(list_villa)
     flag_go_out = 0
+    
+    way = fullWay.replace(convert_list[len(convert_list) - 1] + ",","")
+    
+    print(fullWay)
+    print(way)
+    
     if home_value == '':
         flag_go_out = 1
 
-    if value_turning:
-        flag_skip = 1
+    # xu ly go home
+    if value_turning != "":
+        if value_turning == "FORWARD":
+            flag_skip = 1
+#             forward_with_speed(speed)
+        else:
+            flag_skip = 0
+        if value_turning == "FORWARD" and isTurning == True:
+            value_turning = ""
+        if isTurning == False:
+            sec = time.time() + 2
+        else :
+            sec = time.time()    
         flag_turn_sos_p = 1
-        sec = time.time()
+        
         value_detect = value_turning
-        value_turning = ''
+        value_turning = ""
+        
     while True:
         flag_detect = 0
         frame = call_thread_camera()
@@ -495,6 +513,8 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
         call_thread_follow_line(sign_1, sign_2, sign_3, sign_4, sign_5)
         GPIO.output(relayLed, GPIO.LOW)
         
+        forward_with_speed(speed)
+        
         if flag_sensor_light == "SOS_P" and flag_derection_return_home != "":
             flag_count_parking = flag_count_parking + 1
             turn_into_home(flag_derection_return_home, code)
@@ -524,7 +544,7 @@ def run(list_villa, home_value, code, isTurning, value_turning, fullWay):
                 try:
                     value_detect = list_villa[villa].upper().strip()
                     GPIO.output(relayLed, GPIO.LOW)
-                    api = API_ENDPOINT + URI_TRACKING + "?vehicle_code=" + code + "&villa_name=" + villa + "&way=" + fullWay + "&before_node=" + convert_list[convert_list.index(villa) - 1]
+                    api = API_ENDPOINT + URI_TRACKING + "?vehicle_code=" + code + "&villa_name=" + villa + "&way=" + way + "&before_node=" + convert_list[convert_list.index(villa) - 1]
                     call_api_process(api)
 #                     requests.get(api)
                     # end call
